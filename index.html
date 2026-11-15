@@ -149,6 +149,21 @@ textarea{font-family:var(--f-body);resize:vertical}
 .salvas li .nm{flex:1 1 160px;min-width:0;overflow-wrap:anywhere;font-weight:600}
 .salvas li .dt{color:var(--muted);font-size:12px}
 .salvas .av{color:var(--muted);font-size:12px;margin:0}
+.mentor-panel{margin-top:16px}
+.mentor{display:flex;flex-direction:column;gap:10px}
+.mentor .mgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mentor .mhead{display:flex;justify-content:space-between;align-items:center;gap:8px;font:700 12px var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--ink)}
+.mentor ul.mlist{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.mentor ul.mlist label{flex-direction:row;align-items:flex-start;gap:8px;font-size:13px;color:var(--ink)}
+.mentor ul.mlist input{width:auto;margin-top:2px;flex:none}
+.malerts{display:grid;gap:6px}
+.malerta{border:1px solid var(--line);border-left:4px solid var(--muted);border-radius:6px;padding:7px 10px;font-size:13px;background:var(--bg);color:var(--ink)}
+.malerta.alto{border-left-color:var(--loss)}
+.malerta.medio{border-left-color:var(--warn);background:var(--warn-bg)}
+.malerta.ok{border-left-color:var(--gain)}
+.malerta .mex{display:block;color:var(--muted);font-size:12px;margin-top:3px}
+@media (min-width:900px){.mentor{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px 20px;align-items:start}.mentor>p.note:first-child{grid-column:1/-1}}
+@media (max-width:420px){.mentor .mgrid{grid-template-columns:1fr}}
 .fix-log ul{margin:6px 0 0;padding-left:18px}
 .fix-log li{margin-bottom:3px}
 .fix-log .t{font:600 12px var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
@@ -342,6 +357,33 @@ textarea{font-family:var(--f-body);resize:vertical}
   </section>
 
 </div>
+
+
+<section class="panel mentor-panel" aria-label="Mentor">
+  <div class="panel-head"><h2>Mentor</h2></div>
+<div class="mentor" id="mentor">
+      <p class="note" style="margin:0">O mentor é um segundo par de olhos sobre a lógica e o risco da operação que você montou, medidos pelas suas regras e pelo checklist do seu método. Ele não diz se é para comprar ou vender: quem decide é você. Nesta edição, o mentor confere pelas regras e pelo checklist; ele não lê imagens.</p>
+      <div><span class="note" style="margin:0 0 4px;display:block">Seu nível</span>
+        <div class="seg" id="m-nivel"><button type="button" data-v="leigo">Leigo</button><button type="button" data-v="inter">Intermediário</button><button type="button" data-v="avanc">Avançado</button></div></div>
+      <label>Método
+        <select id="m-metodo"><option value="livre">Livre (checklist geral)</option><option value="wyckoff">Wyckoff</option><option value="elliott">Ondas de Elliott</option><option value="smc">Smart Money (SMC)</option><option value="fluxo">Fluxo, book e times &amp; trades</option></select></label>
+      <div class="mgrid">
+        <label>Risco:retorno mínimo (1 : x)<input id="m-rr" inputmode="decimal"></label>
+        <label>Custo máximo do alvo (%)<input id="m-custo" inputmode="decimal"></label>
+      </div>
+      <p class="note" style="margin:0">O risco máximo por operação é o "Risco por trade" da aba Operação (<span id="m-risco"></span>).</p>
+      <label>Por que esta operação?<textarea id="m-tese" rows="2" placeholder="ex.: spring na fase C do WDO, teste com volume baixo"></textarea></label>
+      <label>Onde a ideia fica errada?<input id="m-inval" placeholder="ex.: se perder a mínima do spring, 5462"></label>
+      <div>
+        <div class="mhead"><span>Checklist do método</span><button class="btn ghost small" type="button" id="m-edit">Editar checklist</button></div>
+        <ul class="mlist" id="m-list"></ul>
+        <textarea id="m-custom" class="hide" rows="7" aria-label="Itens do checklist, um por linha"></textarea>
+        <p class="note hide" id="m-custom-help" style="margin:4px 0 0">Um item por linha. Cole aqui o checklist do seu livro ou do seu plano de trade. Apague tudo para voltar ao padrão.</p>
+      </div>
+      <div class="mhead"><span>O que o mentor já vê</span></div>
+      <div class="malerts" id="m-alerts" aria-live="polite"></div>
+    </div>
+</section>
 
 <footer class="rod">
   <h2>Os livros</h2>
@@ -908,6 +950,104 @@ function carregarExemplo(id){
   $("fix-log").classList.remove("hide");$("fix-undo").classList.remove("hide");
 }
 $("exs").addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-ex]");if(b)carregarExemplo(b.dataset.ex);});
+/* ---------- mentor: regras locais (funcionam sem o Claude) ---------- */
+const CHECKLISTS={
+  livre:["Escrevi o motivo da entrada antes de entrar.","Sei em que ponto a ideia fica errada, e o stop está nesse ponto, não só num valor em reais.","O alvo tem um motivo (nível, estrutura, projeção).","Olhei o tempo gráfico maior antes do de entrada.","Conferi horário e notícias (abertura, payroll, Copom, leilão).","Não estou operando para recuperar uma perda.","Se o stop bater, a conta e a cabeça aguentam continuar o plano."],
+  wyckoff:["Identifiquei o ciclo no tempo gráfico maior: acumulação, alta, distribuição ou baixa.","Sei em que fase da estrutura (A a E) o preço está.","O evento da entrada está claro: spring ou teste, UTAD, LPS ou LPSY, ou rompimento.","O volume confirma a leitura de esforço e resultado nesse ponto.","O stop fica além do ponto que invalida a leitura (por exemplo, a mínima do spring).","O alvo tem base na estrutura (faixa da lateralização, causa e efeito)."],
+  elliott:["Contei as ondas no tempo gráfico maior e no de entrada.","Sei em que onda espero estar e tenho uma contagem alternativa.","A contagem respeita as regras: a 2 não passa do início da 1, a 3 não é a menor, a 4 não entra na 1 (fora diagonais).","O stop fica no nível que invalida a contagem.","O alvo usa uma projeção (Fibonacci) coerente com a onda esperada.","A operação é a favor da onda de grau maior, ou sei que estou contra ela."],
+  smc:["Defini o viés no tempo maior pela estrutura (BOS, CHoCH).","Houve captura de liquidez antes da entrada.","A entrada está numa zona definida (order block, FVG) no lado certo de premium ou discount.","Tive confirmação no tempo gráfico menor.","O stop fica além da zona ou da mínima ou máxima que invalida a ideia.","O alvo é a próxima liquidez (topos ou fundos iguais, máxima ou mínima anterior)."],
+  fluxo:["Li o contexto (tendência ou lateral, região de preço) antes de olhar o fluxo.","O book e o times & trades mostram agressão ou absorção coerentes com o meu lado.","Identifiquei onde há defesa ou lotes relevantes.","O stop fica onde o fluxo desmente a leitura.","Tenho plano para horários de notícia e para leilão."]
+};
+const MNIVEIS={leigo:"leigo",inter:"intermediário",avanc:"avançado"};
+function ensureMentor(){
+  const base={nivel:"inter",metodo:"livre",rrMin:"1,5",custoMax:"30",tese:"",inval:"",checks:{},custom:{}};
+  if(!S.mentor||typeof S.mentor!=="object")S.mentor={};
+  S.mentor={...base,...S.mentor};
+  if(!CHECKLISTS[S.mentor.metodo])S.mentor.metodo="livre";
+  if(!S.mentor.checks||typeof S.mentor.checks!=="object")S.mentor.checks={};
+  if(!S.mentor.custom||typeof S.mentor.custom!=="object")S.mentor.custom={};
+  return S.mentor;
+}
+function checklistAtual(){const M=ensureMentor(),c=String(M.custom[M.metodo]||"").split("\n").map(s=>s.trim()).filter(Boolean);return c.length?c:CHECKLISTS[M.metodo];}
+function marcados(){const M=ensureMentor(),L=checklistAtual(),k=M.checks[M.metodo]||[];return L.map((_,i)=>!!k[i]);}
+function mentorAlertas(){
+  const M=ensureMentor(), I=INFO[S.inst], out=[];
+  const al=(nivel,txt,ex)=>out.push({nivel,txt,ex:ex||""});
+  const ent=num(S.entrada), st=num(S.stop), alv=num(S.alvo);
+  if(!Number.isFinite(ent)||!Number.isFinite(st)||!Number.isFinite(alv)){al("info","Preencha entrada, stop e alvo na aba Operação para o mentor conferir a conta.");return out;}
+  const R=calc(), dec=I.b3?0:2;
+  const risco=num(S.riscoPct), pct=R.percCapitalNoStop;
+  if(Number.isFinite(pct)&&Number.isFinite(risco)){
+    if(pct>risco+1e-9)al("alto","O stop leva "+nf(pct,1)+"% da conta. A sua regra é "+nf(risco,1)+"%."+(Number.isFinite(R.qtdMaxPeloRisco)?(I.b3&&R.qtdMaxPeloRisco<1?" Com esse stop, nem 1 contrato cabe na sua regra.":" Pela sua regra, o tamanho máximo seria "+nf(R.qtdMaxPeloRisco,dec)+"."):""),"Risco por trade é quanto da conta some se o stop bater. Passar da própria regra é o erro que mais quebra conta.");
+    else al("ok","O stop leva "+nf(pct,1)+"% da conta, dentro da sua regra de "+nf(risco,1)+"%.");
+  }
+  const rrMin=num(M.rrMin);
+  if(Number.isFinite(R.riscoRetorno)&&Number.isFinite(rrMin)){
+    if(R.riscoRetorno<rrMin)al("medio","Risco:retorno líquido de 1 : "+nf(R.riscoRetorno,2)+". O seu mínimo é 1 : "+nf(rrMin,2)+".","Compara o que sobra no alvo com o que sai no stop, já com custos. Abaixo do mínimo, você precisa acertar mais vezes para empatar.");
+    else al("ok","Risco:retorno líquido de 1 : "+nf(R.riscoRetorno,2)+", acima do seu mínimo de 1 : "+nf(rrMin,2)+".");
+  }
+  const cm=num(M.custoMax);
+  if(R.brutoAlvo>0&&Number.isFinite(R.custoTotalAlvo)&&Number.isFinite(cm)){
+    const p=R.custoTotalAlvo/R.brutoAlvo*100;
+    if(p>cm)al("medio","Custos, spread e slippage comem "+nf(p,0)+"% do ganho bruto no alvo. O seu limite é "+nf(cm,0)+"%.","Quanto menor o alvo, maior o peso do custo fixo. Alvo curto com custo alto precisa de taxa de acerto muito alta.");
+  }
+  if(I.b3&&Number.isFinite(R.irNoAlvo)&&R.irNoAlvo>0)al("info","Se bater o alvo, o imposto leva "+brl(R.irNoAlvo)+" ("+(S.modo==="day"?"20% no day trade":"15% no swing")+"), e o dedo-duro já retém "+brl(R.dedoDuroNoAlvo)+".","O mentor considera o resultado depois do imposto, que é o que de fato fica.");
+  if(Number.isFinite(R.stopsAteZerar)){
+    if(R.stopsAteZerar<10)al("alto",R.stopsAteZerar<=1?"Com este tamanho, um único stop já leva a conta inteira.":"Com este tamanho, "+R.stopsAteZerar+" stops seguidos zeram a conta.","Sequências de 5 a 10 stops acontecem até com métodos bons. Uma conta que aguenta poucos stops não dá tempo para o método funcionar.");
+    else if(R.stopsAteZerar<20)al("medio","A conta aguenta "+R.stopsAteZerar+" stops seguidos com este tamanho.","Quanto mais stops a conta aguenta, mais tempo o método tem para mostrar resultado.");
+  }
+  if(Number.isFinite(R.margemLivre)&&R.margemLivre<0)al("alto","A margem pedida passa do capital da conta.","Sem margem livre, a corretora pode zerar a posição sozinha.");
+  if(Number.isFinite(R.alavancagemEfetiva)&&R.alavancagemEfetiva>20)al("info","Alavancagem real de "+nf(R.alavancagemEfetiva,1)+"x: cada 1% de movimento contra mexe "+nf(R.alavancagemEfetiva,0)+"% da conta.","Alavancagem real é o valor total da posição dividido pela conta.");
+  const atr=num(S.oAtr), dS=Math.abs(ent-st), dA=Math.abs(alv-ent);
+  if(atr>0&&dS>0){
+    const r=dS/atr*100;
+    if(r<10)al("medio","O stop equivale a "+nf(r,0)+"% do ATR informado. Uma oscilação pequena e comum já alcança esse stop.","ATR é a amplitude média de movimento. Confira se o ATR é do mesmo tempo gráfico que você usa para o stop.");
+    else al("info","O stop equivale a "+nf(r,0)+"% do ATR informado e o alvo a "+nf(dA/atr*100,0)+"%.","Confira se o ATR é do mesmo tempo gráfico que você usa para stop e alvo.");
+  }
+  if(!String(M.tese).trim())al("medio","Falta escrever por que você quer entrar.","Escrever o motivo antes evita entrar por impulso e deixa a revisão possível depois.");
+  if(!String(M.inval).trim())al("medio","Falta dizer onde a ideia fica errada.","O stop deve ficar onde a leitura deixa de valer, não só num valor em reais que dá para perder.");
+  const mk=marcados(), ok=mk.filter(Boolean).length;
+  if(ok<mk.length)al(ok<mk.length/2?"medio":"info","Checklist: "+ok+" de "+mk.length+" itens confirmados.","Item sem marcar não quer dizer erro. Quer dizer que vale olhar de novo antes de decidir.");
+  else al("ok","Checklist: todos os "+mk.length+" itens confirmados.");
+  return out;
+}
+function renderMentor(){
+  if(!$("mentor"))return;
+  const M=ensureMentor();
+  document.querySelectorAll("#m-nivel button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===M.nivel)));
+  const act=document.activeElement;
+  if(act!==$("m-metodo"))$("m-metodo").value=M.metodo;
+  [["m-rr","rrMin"],["m-custo","custoMax"],["m-tese","tese"],["m-inval","inval"]].forEach(([id,k])=>{if(act!==$(id))$(id).value=M[k]??"";});
+  $("m-risco").textContent=nf(num(S.riscoPct),1)+"%";
+  if(act!==$("m-custom"))$("m-custom").value=M.custom[M.metodo]||CHECKLISTS[M.metodo].join("\n");
+  const L=checklistAtual(), mk=marcados();
+  if(!$("m-list").contains(act))$("m-list").innerHTML=L.map((t,i)=>'<li><label><input type="checkbox" data-mchk="'+i+'"'+(mk[i]?" checked":"")+'><span></span></label></li>').join("");
+  $("m-list").querySelectorAll("span").forEach((s,i)=>{s.textContent=L[i];});
+  const A=mentorAlertas().filter(a=>M.nivel!=="avanc"||a.nivel!=="info");
+  $("m-alerts").innerHTML="";
+  A.forEach(a=>{const d=document.createElement("div");d.className="malerta "+a.nivel;d.textContent=a.txt;
+    if(M.nivel==="leigo"&&a.ex){const e=document.createElement("span");e.className="mex";e.textContent=a.ex;d.appendChild(e);}
+    $("m-alerts").appendChild(d);});
+}
+if($("mentor")){
+  ensureMentor();
+  const salvaM=()=>{save();renderMentor();};
+  if($("mtab"))$("mtab").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const m=b.dataset.v==="mentor";
+    document.querySelectorAll("#mtab button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
+    $("mentor").classList.toggle("hide",!m);$("conversa").classList.toggle("hide",m);if(m)renderMentor();});
+  $("m-nivel").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;S.mentor.nivel=b.dataset.v;salvaM();});
+  $("m-metodo").addEventListener("change",()=>{S.mentor.metodo=$("m-metodo").value;$("m-custom").classList.add("hide");$("m-custom-help").classList.add("hide");$("m-edit").textContent="Editar checklist";salvaM();});
+  [["m-rr","rrMin"],["m-custo","custoMax"],["m-tese","tese"],["m-inval","inval"]].forEach(([id,k])=>$(id).addEventListener("input",()=>{S.mentor[k]=$(id).value;salvaM();}));
+  $("m-list").addEventListener("change",e=>{const t=e.target;if(t.dataset.mchk==null)return;const M=S.mentor;const k=(M.checks[M.metodo]||[]).slice();k[+t.dataset.mchk]=t.checked;M.checks[M.metodo]=k;salvaM();});
+  $("m-edit").addEventListener("click",()=>{const ab=$("m-custom").classList.toggle("hide");$("m-custom-help").classList.toggle("hide",ab);$("m-edit").textContent=ab?"Editar checklist":"Pronto";if(!ab)$("m-custom").focus();});
+  $("m-custom").addEventListener("input",()=>{const M=S.mentor,v=$("m-custom").value;const pad=CHECKLISTS[M.metodo].join("\n");
+    if(!v.trim()||v.trim()===pad)delete M.custom[M.metodo];else M.custom[M.metodo]=v;M.checks[M.metodo]=[];salvaM();});
+  const renderBase=render;
+  render=function(){renderBase.apply(this,arguments);try{renderMentor();}catch(e){}};
+  renderMentor();
+}
+
+
 renderEx();
 
 /* ---------- salvar operações ---------- */
