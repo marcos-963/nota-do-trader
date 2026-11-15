@@ -334,7 +334,7 @@ textarea{font-family:var(--f-body);resize:vertical}
     <li><a href="https://www.amazon.com.br/s?k=Flow+%26+Order+Leitura+Institucional+do+Mercado+Marcus+Deleon" target="_blank" rel="noopener">Flow &amp; Order: Leitura Institucional do Mercado</a></li>
     <li><a href="https://www.amazon.com.br/s?k=O+M%C3%A9todo+Smart+Money+Wyckoff+Elliott+SMC+Marcus+Deleon" target="_blank" rel="noopener">O Método Smart Money: Wyckoff, Elliott e SMC</a></li>
   </ul>
-  <p style="margin:0">Ferramenta educativa. Não é recomendação de investimento, não indica compra ou venda de nenhum ativo e não substitui orientação de profissional credenciado. Operar alavancado pode causar perdas maiores que o capital. Taxas, margens e regras de imposto mudam e variam por corretora: confira sempre na sua nota de corretagem e com um contador. Os dados ficam só no seu navegador; nada é enviado.</p>
+  <p style="margin:0">Ferramenta educativa. Não é recomendação de investimento, não indica compra ou venda de nenhum ativo e não substitui orientação de profissional credenciado. Operar alavancado pode causar perdas maiores que o capital. Taxas, margens e regras de imposto mudam e variam por corretora: confira sempre na sua nota de corretagem e com um contador. Os dados ficam só no seu navegador; nada é enviado. <a href="en/">English version (Forex and gold)</a>.</p>
 </footer>
 </div>
 
@@ -441,7 +441,8 @@ function corrigir(nivel){
   // 1) campos de preço: escala pela mediana
   const precoKeys=["entrada","stop","alvo","pmAtual","oMax","oMin","oAtual","oMedia"];
   const vals=[...precoKeys.map(k=>num(S[k])),...S.ops.map(o=>num(o.preco))].filter(v=>Number.isFinite(v)&&v>0).sort((a,b)=>a-b);
-  let ref=vals.length?vals[Math.floor(vals.length/2)]:num(P.entrada);
+  let ref=(()=>{const t=["entrada","stop","alvo"].map(k=>num(S[k])).filter(v=>v>0).sort((a,b)=>a-b);  /* a operação manda na escala; o resto só se ela estiver incompleta */
+    if(t.length>=2)return t[Math.floor(t.length/2)];return vals.length?vals[Math.floor(vals.length/2)]:num(P.entrada);})();
   const escala=v=>{
     if(!Number.isFinite(v)||v<=0||!(ref>0))return v;
     if(Math.abs(v/ref-1)<=.5)return v;

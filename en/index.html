@@ -1,0 +1,682 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Trade Note · Forex and Gold Calculator</title>
+<meta name="description" content="Free calculator from Marcus Deleon: spread, slippage, commission, swap, margin, average price and scenarios for Forex and gold.">
+<style>:root{color-scheme:light}body{margin:0;font:14px system-ui,-apple-system,"Segoe UI",sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: trade desk — inputs left, trade statement right */
+:root{
+  --bg:#F3F5F4; --panel:#FFFFFF; --ink:#16201D; --muted:#5D6B66; --line:#D8DFDC;
+  --accent:#0F6B5C; --accent-ink:#FFFFFF; --soft:#E6EFEC;
+  --gain:#137A3F; --loss:#B4322B; --warn:#9A6200; --warn-bg:#FFF4DD;
+  --op-bg:#E2EFEA; --op-line:#9FC7BA; --op-field:#FFFFFF;
+  --chat-bg:#FFFFFF; --chat-ink:#000000; --chat-muted:#333333; --chat-me:#DDEBE6; --chat-ai:#F5F7F6;
+  --type-bg:#EAF2FC; --type-line:#7FA7D6; --type-ink:#000000;
+  --f-display:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1513; --panel:#161F1C; --ink:#E4ECE9; --muted:#93A39D; --line:#2A3632;
+  --accent:#3FB8A1; --accent-ink:#06201B; --soft:#1C2925;
+  --gain:#4CC983; --loss:#F07A70; --warn:#E8B04F; --warn-bg:#2B2414;
+  --op-bg:#13302A; --op-line:#2F6B5D; --op-field:#0E1F1B; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1513; --panel:#161F1C; --ink:#E4ECE9; --muted:#93A39D; --line:#2A3632;
+  --accent:#3FB8A1; --accent-ink:#06201B; --soft:#1C2925;
+  --gain:#4CC983; --loss:#F07A70; --warn:#E8B04F; --warn-bg:#2B2414;
+  --op-bg:#13302A; --op-line:#2F6B5D; --op-field:#0E1F1B; color-scheme:dark}
+*{box-sizing:border-box}
+/* Operação: painel com fundo verde-claro próprio */
+#col-in{background:var(--op-bg);border-color:var(--op-line)}
+#col-in input,#col-in select,#col-in .seg button{background:var(--op-field)}
+#col-in .seg{border-color:var(--op-line)}
+#col-in label,#col-in h3{color:var(--ink)}
+/* (estilos do painel de conversa: não usados nesta edição) */
+.chat{background:var(--chat-bg);color:var(--chat-ink);border-color:var(--line);color-scheme:light}
+.chat h2{color:var(--chat-ink)}
+.chat .msg.ai{background:var(--chat-ai);color:var(--chat-ink);border-color:#D6DCDA}
+.chat .msg.me{background:var(--chat-me);color:var(--chat-ink)}
+.chat .msg.sys,.chat .disc,.chat .note{color:var(--chat-muted)}
+.chat .chip{background:#FFFFFF;color:var(--chat-ink);border-color:#C9D2CF}
+.chat .btn.ghost{color:#0F6B5C;border-color:#0F6B5C}
+.chat .btn:not(.ghost){background:#0F6B5C;border-color:#0F6B5C;color:#FFFFFF}
+.chat .att{background:#F5F7F6;border-color:#D6DCDA}
+.chat .att-txt{color:var(--chat-muted)}
+/* caixa onde você escreve */
+.chat textarea#q{background:var(--type-bg);color:var(--type-ink);border:1.5px solid var(--type-line)}
+.chat textarea#q::placeholder{color:#4A5A70}
+.chat textarea#q:focus-visible{outline:2px solid var(--type-line)}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45}
+.wrap{max-width:1240px;margin:0 auto;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:16px}
+h1{font-family:var(--f-display);font-weight:700;font-size:28px;letter-spacing:.01em;margin:0;text-wrap:balance}
+.autor{display:block;font:600 12px var(--f-display);letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:4px}
+footer.rod{margin-top:28px;border-top:1px solid var(--line);padding-top:16px;display:grid;gap:12px;font-size:13px;color:var(--muted)}
+footer.rod h2{font:700 14px var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--ink);margin:0}
+footer.rod ul{margin:0;padding-left:18px}
+footer.rod a{color:var(--accent)}
+.sub{color:var(--muted);margin:2px 0 0;max-width:62ch}
+.tabs{display:flex;gap:4px;flex-wrap:wrap}
+.tab{font:600 13px var(--f-display);letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--line);background:var(--panel);color:var(--muted);padding:8px 12px;border-radius:6px;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.tab:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.grid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:16px;align-items:start}
+
+@media (max-width:720px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px;min-width:0}
+.panel h2{font:700 15px var(--f-display);letter-spacing:.08em;text-transform:uppercase;margin:0 0 12px;color:var(--ink)}
+.panel h3{font:600 12px var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:16px 0 8px}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+.fields .full{grid-column:1/-1}
+label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);min-width:0}
+label small{color:var(--muted);opacity:.85}
+input,select,textarea{font:500 14px var(--f-mono);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px;width:100%;min-width:0}
+textarea{font-family:var(--f-body);resize:vertical}
+.seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{flex:1;font:600 13px var(--f-body);padding:8px 6px;background:var(--bg);color:var(--muted);border:0;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--soft);color:var(--ink);box-shadow:inset 0 -2px 0 var(--accent)}
+.seg.side button[data-v="C"][aria-pressed="true"]{box-shadow:inset 0 -2px 0 var(--gain)}
+.seg.side button[data-v="V"][aria-pressed="true"]{box-shadow:inset 0 -2px 0 var(--loss)}
+.hide{display:none!important}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.kpi{border:1px solid var(--line);border-radius:6px;padding:10px;background:var(--bg)}
+.kpi .k{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.kpi .v{font:600 20px var(--f-mono);font-variant-numeric:tabular-nums;margin-top:2px}
+.kpi .d{font-size:12px;color:var(--muted)}
+.gain{color:var(--gain)} .loss{color:var(--loss)}
+.nota{width:100%;border-collapse:collapse;font-size:13px}
+.nota th,.nota td{padding:6px 4px;border-bottom:1px dashed var(--line);text-align:right;white-space:nowrap}
+.nota th:first-child,.nota td:first-child{text-align:left;white-space:normal}
+.nota thead th{font:600 11px var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line)}
+.nota tr.tot td{font-weight:600;border-bottom:1px solid var(--line)}
+.nota td.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.scroll{overflow-x:auto}
+.alert{border-radius:6px;padding:8px 10px;font-size:13px;background:var(--warn-bg);color:var(--warn);margin-top:10px}
+.note{font-size:12px;color:var(--muted);margin-top:10px}
+.note li{margin-bottom:4px}
+.note ul{padding-left:18px;margin:6px 0}
+.btn{font:600 13px var(--f-body);border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);border-radius:6px;padding:8px 12px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:default}
+.ops{width:100%;border-collapse:collapse}
+.ops td{padding:4px 3px}
+.ops select,.ops input{padding:6px 8px}
+.x{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:4px 8px}
+.bar{position:relative;height:14px;border-radius:7px;background:linear-gradient(90deg,var(--soft),var(--line));margin:22px 0 26px}
+.bar .mk{position:absolute;top:-6px;width:2px;height:26px;background:var(--ink)}
+.bar .mk span{position:absolute;top:28px;left:50%;transform:translateX(-50%);font:500 11px var(--f-mono);white-space:nowrap;color:var(--ink)}
+.bar .mk.avg{background:var(--accent)} .bar .mk.avg span{top:-18px;color:var(--accent)}
+.bar .end{position:absolute;top:18px;font:500 11px var(--f-mono);color:var(--muted)}
+/* chat */
+.chat{display:flex;flex-direction:column;gap:10px}
+.log{display:flex;flex-direction:column;gap:8px;max-height:520px;overflow-y:auto;padding-right:4px}
+.msg{border-radius:8px;padding:9px 11px;white-space:pre-wrap;word-wrap:break-word;font-size:13.5px}
+.msg.me{background:var(--soft);align-self:flex-end;max-width:90%}
+.msg.ai{background:var(--bg);border:1px solid var(--line)}
+.msg.sys{font-size:12px;color:var(--muted);padding:2px 0}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:500 12px var(--f-body);border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:5px 10px;cursor:pointer;text-align:left}
+.row{display:flex;gap:8px;align-items:flex-end}
+.row textarea{flex:1}
+.btns{display:flex;flex-direction:column;gap:6px}
+.exs{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.ex{border:1px solid var(--line);border-radius:8px;padding:12px;background:var(--bg);display:flex;flex-direction:column;gap:8px;min-width:0}
+.ex h4{margin:0;font:700 15px var(--f-display);letter-spacing:.02em}
+.ex .tag{font:600 11px var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.ex p{margin:0;font-size:13px}
+.ex .mostra{color:var(--muted);font-size:12.5px}
+.ex dl{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin:0;font-size:12.5px}
+.ex dt{color:var(--muted)} .ex dd{margin:0;text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.ex .btn{margin-top:auto;align-self:flex-start}
+.fixbar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:16px}
+.fix-auto{flex-direction:row;align-items:center;gap:6px;color:var(--ink);font-size:13px}
+.fix-auto input{width:auto}
+.fix-log{flex-basis:100%;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:6px;background:var(--panel);padding:10px 12px;font-size:13px}
+.fix-log ul{margin:6px 0 0;padding-left:18px}
+.fix-log li{margin-bottom:3px}
+.fix-log .t{font:600 12px var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.inwrap{position:relative;display:block;min-width:0}
+.inwrap input{padding-right:30px}
+.clr{position:absolute;top:0;right:2px;height:100%;width:28px;border:0;background:transparent;color:var(--muted);font-size:17px;line-height:1;cursor:pointer;border-radius:4px}
+.clr:hover{color:var(--loss)}
+.panel-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.panel-head h2{margin:0}
+.btn.small{padding:5px 10px;font-size:12px}
+.btn.danger{border-color:var(--loss);color:var(--loss);background:transparent}
+.fixed{box-shadow:0 0 0 2px var(--warn)}
+.fixmsg{display:block;font-size:11.5px;line-height:1.35;color:var(--warn);margin-top:3px}
+.ops .fixmsg{max-width:220px}
+.att{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:6px;padding:6px;background:var(--bg)}
+.att img{width:72px;height:54px;object-fit:cover;border-radius:4px;max-width:100%}
+.att-txt{display:flex;align-items:center;justify-content:space-between;gap:6px;flex:1;min-width:0;font-size:12px;color:var(--muted)}
+.att-txt span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.msg img{display:block;max-width:100%;max-height:160px;border-radius:4px;margin-bottom:6px}
+.chat.drag{outline:2px dashed var(--accent);outline-offset:-4px}
+.disc{font-size:11.5px;color:var(--muted);border-top:1px solid var(--line);padding-top:8px}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <span class="autor">A companion tool to the books by Marcus Deleon</span>
+    <h1>Trade Note</h1>
+    <p class="sub">Run the numbers before you take a Forex or gold trade: spread, slippage, commission, swap, margin and leverage, laid out like a trade statement. Every cost here is an example; check your broker's real figures.</p>
+  </div>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-tab="op">Trade</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="pm">Average price</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="onde">Price context</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="cen">Scenarios</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="ex">Examples</button>
+  </div>
+</header>
+
+<div class="fixbar">
+  <button class="btn" type="button" id="fix-btn">Check and fix</button>
+  <span class="note" style="margin:0">or press Enter in any field</span>
+  <button class="btn ghost small danger" type="button" data-apagar="tudo" title="Clears every field on every tab. You can undo it.">Clear all</button>
+  <button class="btn ghost hide" type="button" id="fix-undo">Undo</button>
+  <label class="fix-auto"><input type="checkbox" id="fix-auto"> Fix typos when I leave a field</label>
+  <div class="fix-log hide" id="fix-log"></div>
+</div>
+
+<div class="grid">
+  <section class="panel" id="col-in">
+    <div class="panel-head"><h2>Trade</h2><button class="btn ghost small danger" type="button" data-apagar="op" title="Clears size, entry, stop, target, spread and slippage. Keeps account and broker costs.">Clear trade</button></div>
+    <div class="fields">
+      <label class="full">Instrument
+        <select id="inst">
+          <option value="QUSD">USD-quoted pair · EUR/USD, GBP/USD, AUD/USD…</option>
+          <option value="BUSD">USD-base pair · USD/JPY, USD/CHF, USD/CAD…</option>
+          <option value="XAU">Gold · XAU/USD</option>
+        </select>
+      </label>
+      <div class="full" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <label>Side<div class="seg side" id="lado"><button type="button" data-v="C">Buy</button><button type="button" data-v="V">Sell</button></div></label>
+        <label>Holding<div class="seg" id="modo"><button type="button" data-v="day">Intraday</button><button type="button" data-v="swing">Overnight</button></div></label>
+      </div>
+      <label>Lots<input id="qtd" inputmode="decimal"></label>
+      <label>Account balance (US$)<input id="capital" inputmode="decimal"></label>
+      <label>Entry<input id="entrada" inputmode="decimal"></label>
+      <label>Stop<input id="stop" inputmode="decimal"></label>
+      <label>Target<input id="alvo" inputmode="decimal"></label>
+      <label>Risk per trade (% of balance)<input id="riscoPct" inputmode="decimal"></label>
+    </div>
+    <h3>Execution</h3>
+    <div class="fields">
+      <label>Spread <small>(pips)</small><input id="spread" inputmode="decimal"></label>
+      <label>Slippage per side <small>(pips)</small><input id="slip" inputmode="decimal"></label>
+    </div>
+    <h3>Broker costs</h3>
+    <div class="fields">
+      <label>Commission (US$ per lot, round turn)<input id="comissao" inputmode="decimal"></label>
+      <label>Leverage (1:x)<input id="alav" inputmode="decimal"></label>
+      <label>Swap (US$ per lot per night, negative = you pay)<input id="swap" inputmode="decimal"></label>
+      <label>Nights held<input id="noites" inputmode="decimal"></label>
+      <label>Contract size (1 lot)<input id="contrato" inputmode="decimal"></label>
+      <label>Pip size (in price)<input id="pip" inputmode="decimal"></label>
+      <label class="full">Tax on profit (%) <small>(depends on your country; 0 to ignore)</small><input id="imposto" inputmode="decimal"></label>
+    </div>
+    <p class="note">Use a dot for decimals: <span class="num">1.0850</span>, <span class="num">4,012.50</span>. The starting values are examples.</p>
+  </section>
+
+  <section class="panel" id="col-out">
+    <div id="view-op">
+      <h2>Result</h2>
+      <div class="kpis">
+        <div class="kpi"><div class="k">If the stop is hit</div><div class="v" id="k-stop">–</div><div class="d" id="k-stop-d"></div></div>
+        <div class="kpi"><div class="k">If the target is hit (net)</div><div class="v" id="k-alvo">–</div><div class="d" id="k-alvo-d"></div></div>
+        <div class="kpi"><div class="k">Risk : reward</div><div class="v" id="k-rr">–</div><div class="d">net of costs</div></div>
+        <div class="kpi"><div class="k">Break-even</div><div class="v" id="k-be">–</div><div class="d" id="k-be-d"></div></div>
+      </div>
+      <div class="scroll"><table class="nota"><thead><tr><th>Trade statement</th><th>At stop</th><th>At target</th></tr></thead><tbody id="nota"></tbody></table></div>
+      <h3>Account, margin and leverage</h3>
+      <div class="scroll"><table class="nota"><tbody id="cap"></tbody></table></div>
+      <div id="alerts"></div>
+      <div class="note"><ul>
+        <li>The spread is paid once (you buy at the ask and sell at the bid). Slippage is counted on a market entry and a stop exit; a limit order at the target has none.</li>
+        <li>Swap only counts when the holding is set to Overnight. Brokers charge triple swap on one weekday, usually Wednesday.</li>
+        <li>On USD-base pairs (USD/JPY…), profit is in the quote currency and converted to dollars at the entry price, so the dollar value is an approximation.</li>
+      </ul></div>
+    </div>
+
+    <div id="view-pm" class="hide">
+      <div class="panel-head"><h2>Building a position</h2><button class="btn ghost small danger" type="button" data-apagar="pm">Clear orders</button></div>
+      <p class="note" style="margin-top:0">One row per filled order, in the order they happened. Orders on the same side add to the position and move the average price; orders on the other side realize profit or loss against the average. Uses the instrument and costs from the Trade tab.</p>
+      <div class="scroll"><table class="ops"><tbody id="ops"></tbody></table></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px"><button class="btn ghost" type="button" id="add-op">Add order</button></div>
+      <div class="fields"><label class="full">Current price<input id="pmAtual" inputmode="decimal"></label></div>
+      <div class="scroll" style="margin-top:12px"><table class="nota"><tbody id="pm-out"></tbody></table></div>
+      <div class="note" id="pm-note"></div>
+    </div>
+
+    <div id="view-onde" class="hide">
+      <div class="panel-head"><h2>Price context</h2><button class="btn ghost small danger" type="button" data-apagar="onde">Clear</button></div>
+      <p class="note" style="margin-top:0">Shows where price sits against references you enter. It describes, it does not predict: price near the high does not mean it will fall, and near the low does not mean it will rise.</p>
+      <div class="fields">
+        <label>Period high<input id="oMax" inputmode="decimal"></label>
+        <label>Period low<input id="oMin" inputmode="decimal"></label>
+        <label>Current price<input id="oAtual" inputmode="decimal"></label>
+        <label>Reference average <small>(VWAP, moving average…)</small><input id="oMedia" inputmode="decimal"></label>
+        <label class="full">ATR / average daily range <small>(optional)</small><input id="oAtr" inputmode="decimal"></label>
+      </div>
+      <div class="bar" id="o-bar"></div>
+      <div class="scroll"><table class="nota"><tbody id="o-out"></tbody></table></div>
+      <div id="o-alert"></div>
+    </div>
+
+    <div id="view-cen" class="hide">
+      <div class="panel-head"><h2>Scenarios</h2><button class="btn ghost small danger" type="button" data-apagar="cen">Clear</button></div>
+      <p class="note" style="margin-top:0">Every combination of stop, target and size, using the instrument, entry and costs from the Trade tab. Targets are multiples of the stop: 2 means a target twice as far as the stop.</p>
+      <div class="fields">
+        <label>Stop from <small>(pips)</small><input id="cenStopDe" inputmode="decimal"></label>
+        <label>Stop to <small>(pips)</small><input id="cenStopAte" inputmode="decimal"></label>
+        <label>Step <small>(pips)</small><input id="cenStopPasso" inputmode="decimal"></label>
+        <label>Sizes in lots <small>(separate with ;)</small><input id="cenQtds"></label>
+        <label class="full">Targets as multiples of the stop <small>(separate with ;)</small><input id="cenAlvos"></label>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:12px 0 8px">
+        <label style="flex-direction:row;align-items:center;gap:6px;color:var(--ink)"><input type="checkbox" id="cenSoRisco" style="width:auto"> Only what fits my risk per trade</label>
+        <button class="btn ghost" type="button" id="cenCopiar">Copy table (for a spreadsheet)</button>
+      </div>
+      <p class="note" id="cen-resumo" style="margin:0 0 8px"></p>
+      <div class="scroll" style="max-height:560px;overflow-y:auto"><table class="nota" id="cen-tab"></table></div>
+      <textarea id="cen-csv" class="hide" rows="4" aria-label="Table as text to copy"></textarea>
+    </div>
+
+    <div id="view-ex" class="hide">
+      <div class="panel-head"><h2>Examples</h2></div>
+      <p class="note" style="margin-top:0">A complete trade for each instrument, with every tab filled in. Prices are made up. Loading an example replaces what is on screen; Undo brings it back.</p>
+      <div class="exs" id="exs"></div>
+    </div>
+  </section>
+</div>
+
+<footer class="rod">
+  <h2>The books</h2>
+  <ul>
+    <li><a href="https://www.amazon.com/s?k=Marcus+Deleon+Smart+Money+Trading+Journal" target="_blank" rel="noopener">Smart Money Trading Journal: Plan, Log and Review Every Trade</a></li>
+    <li><a href="https://www.amazon.com/s?k=Marcus+Deleon+trading" target="_blank" rel="noopener">All books by Marcus Deleon on Amazon</a></li>
+  </ul>
+  <p style="margin:0">Educational tool. It is not investment advice, does not recommend buying or selling any instrument and does not replace a licensed professional. Leveraged trading can lose more than your deposit. Spreads, swaps, margin and taxes change and vary by broker and country: always check your broker's statement and a tax adviser. Your numbers stay in your browser; nothing is sent anywhere. <a href="../">Versão em português</a>.</p>
+</footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+
+const PRESETS={
+  QUSD:{qtd:"0.10",entrada:"1.0850",stop:"1.0830",alvo:"1.0890",spread:"1",slip:"0.2",comissao:"7",alav:"100",swap:"-6",noites:"0",contrato:"100000",pip:"0.0001"},
+  BUSD:{qtd:"0.10",entrada:"150.00",stop:"149.80",alvo:"150.40",spread:"1.2",slip:"0.3",comissao:"7",alav:"100",swap:"5",noites:"0",contrato:"100000",pip:"0.01"},
+  XAU:{qtd:"0.01",entrada:"4000",stop:"3990",alvo:"4020",spread:"3",slip:"2",comissao:"7",alav:"100",swap:"-30",noites:"0",contrato:"100",pip:"0.1"}
+};
+const CEN={
+  QUSD:{stopDe:"5",stopAte:"60",stopPasso:"5",alvos:"1; 1.5; 2; 3",qtds:"0.01; 0.05; 0.1"},
+  BUSD:{stopDe:"5",stopAte:"60",stopPasso:"5",alvos:"1; 1.5; 2; 3",qtds:"0.01; 0.05; 0.1"},
+  XAU:{stopDe:"20",stopAte:"300",stopPasso:"20",alvos:"1; 1.5; 2; 3",qtds:"0.01; 0.02; 0.05"}
+};
+const INFO={QUSD:{nome:"USD-quoted pair",dec:5,tick:.00001},BUSD:{nome:"USD-base pair",dec:3,tick:.001},XAU:{nome:"Gold XAU/USD",dec:2,tick:.01}};
+const EXEMPLOS=[
+  {id:"eur",titulo:"EUR/USD · overnight buy",resumo:"Buy 0.30 lots at 1.0850, stop 25 pips below, target 50 pips above, held for 2 nights.",
+   mostra:"Pip value per lot, swap cost per night, commission per lot and margin at 1:100.",
+   s:{inst:"QUSD",lado:"C",modo:"swing",qtd:"0.30",entrada:"1.0850",stop:"1.0825",alvo:"1.0900",spread:"1",slip:"0.2",comissao:"7",alav:"100",swap:"-6",noites:"2",contrato:"100000",pip:"0.0001",capital:"10000",riscoPct:"1",imposto:"0",
+      ops:[{lado:"C",qtd:"0.20",preco:"1.0850"},{lado:"C",qtd:"0.10",preco:"1.0838"}],pmAtual:"1.0858",oMax:"1.0892",oMin:"1.0811",oAtual:"1.0850",oMedia:"1.0856",oAtr:"0.0065",
+      cen:{stopDe:"10",stopAte:"60",stopPasso:"5",alvos:"1; 1.5; 2; 3",qtds:"0.1; 0.3; 0.5"}}},
+  {id:"gbp",titulo:"GBP/USD · intraday sell",resumo:"Sell 0.20 lots at 1.2700, stop 30 pips above, target 60 pips below, closed the same day.",
+   mostra:"How a wider stop changes the size that fits a 1% risk, and how small the costs are next to the stop.",
+   s:{inst:"QUSD",lado:"V",modo:"day",qtd:"0.20",entrada:"1.2700",stop:"1.2730",alvo:"1.2640",spread:"1.4",slip:"0.3",comissao:"7",alav:"100",swap:"-5",noites:"0",contrato:"100000",pip:"0.0001",capital:"8000",riscoPct:"1",imposto:"0",
+      ops:[{lado:"V",qtd:"0.10",preco:"1.2700"},{lado:"V",qtd:"0.10",preco:"1.2712"}],pmAtual:"1.2690",oMax:"1.2745",oMin:"1.2652",oAtual:"1.2700",oMedia:"1.2688",oAtr:"0.0085",
+      cen:{stopDe:"10",stopAte:"80",stopPasso:"10",alvos:"1; 1.5; 2; 3",qtds:"0.1; 0.2; 0.3"}}},
+  {id:"jpy",titulo:"USD/JPY · intraday buy",resumo:"Buy 0.10 lots at 150.00, stop 20 pips below, target 40 pips above.",
+   mostra:"Why a pip on USD/JPY is worth less than on EUR/USD: profit is in yen and converted back to dollars.",
+   s:{inst:"BUSD",lado:"C",modo:"day",qtd:"0.10",entrada:"150.00",stop:"149.80",alvo:"150.40",spread:"1.2",slip:"0.3",comissao:"7",alav:"100",swap:"5",noites:"0",contrato:"100000",pip:"0.01",capital:"5000",riscoPct:"1",imposto:"0",
+      ops:[{lado:"C",qtd:"0.05",preco:"150.00"},{lado:"C",qtd:"0.05",preco:"149.88"}],pmAtual:"150.05",oMax:"150.62",oMin:"149.41",oAtual:"150.00",oMedia:"150.10",oAtr:"0.95",
+      cen:{stopDe:"10",stopAte:"60",stopPasso:"5",alvos:"1; 1.5; 2; 3",qtds:"0.05; 0.1; 0.2"}}},
+  {id:"xau",titulo:"Gold XAU/USD · intraday sell",resumo:"Sell 0.01 lots (1 ounce) at 4,000.00, stop $12 above, target $24 below.",
+   mostra:"Gold's contract size (100 oz per lot), wider spread and slippage, and what a $1 move is worth.",
+   s:{inst:"XAU",lado:"V",modo:"day",qtd:"0.01",entrada:"4000",stop:"4012",alvo:"3976",spread:"3",slip:"2",comissao:"7",alav:"100",swap:"-30",noites:"0",contrato:"100",pip:"0.1",capital:"2000",riscoPct:"1",imposto:"0",
+      ops:[{lado:"V",qtd:"0.01",preco:"4000"},{lado:"V",qtd:"0.01",preco:"4008"}],pmAtual:"3995",oMax:"4035",oMin:"3968",oAtual:"4000",oMedia:"3994",oAtr:"45",
+      cen:{stopDe:"50",stopAte:"300",stopPasso:"25",alvos:"1; 1.5; 2; 3",qtds:"0.01; 0.02"}}}
+];
+const TEXT_IDS=["qtd","capital","entrada","stop","alvo","riscoPct","spread","slip","comissao","alav","swap","noites","contrato","pip","imposto","pmAtual","oMax","oMin","oAtual","oMedia","oAtr"];
+const CEN_IDS={cenStopDe:"stopDe",cenStopAte:"stopAte",cenStopPasso:"stopPasso",cenQtds:"qtds",cenAlvos:"alvos"};
+const ONDE_KEYS=["oMax","oMin","oAtual","oMedia","oAtr"];
+const KEY="trade-note-en-v1";
+
+let S={inst:"QUSD",lado:"C",modo:"day",capital:"10000",riscoPct:"1",imposto:"0",...PRESETS.QUSD,
+  ops:[{lado:"C",qtd:"0.10",preco:"1.0850"},{lado:"C",qtd:"0.10",preco:"1.0838"}],pmAtual:"1.0846",
+  oMax:"1.0892",oMin:"1.0811",oAtual:"1.0850",oMedia:"1.0856",oAtr:"0.0065",cen:{...CEN.QUSD},tab:"op",autoFix:true};
+try{const v=JSON.parse(localStorage.getItem(KEY)||"null");if(v&&typeof v==="object")S={...S,...v};}catch(e){}
+if(!S.cen||typeof S.cen!=="object")S.cen={...CEN[S.inst]};
+if(!PRESETS[S.inst])S.inst="QUSD";
+
+function num(v){
+  if(typeof v==="number")return v;
+  let s=String(v??"").trim().replace(/\s/g,"").replace(/^US\$|^\$/i,"");
+  if(!s)return NaN;
+  if(s.includes(",")&&s.includes("."))s=s.replace(/,/g,"");          // 4,012.50
+  else if(/^-?\d{1,3}(,\d{3})+$/.test(s))s=s.replace(/,/g,"");        // 4,000
+  else s=s.replace(",",".");                                            // 1,0850 typed European style
+  const n=Number(s);return Number.isFinite(n)?n:NaN;
+}
+const usdF=new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"});
+const usd=n=>Number.isFinite(n)?usdF.format(n):"–";
+const nf=(n,d=2)=>Number.isFinite(n)?n.toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d}):"–";
+const sgnCls=n=>n>0?"gain":n<0?"loss":"";
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function multOf(T){const c=num(T.contrato);return T.inst==="BUSD"?c/num(T.entrada):c;}   // US$ per 1.0 of price per lot
+
+function applyPreset(inst){
+  S.inst=inst;Object.assign(S,PRESETS[inst]);
+  S.ops=[{lado:S.lado,qtd:PRESETS[inst].qtd,preco:PRESETS[inst].entrada}];S.pmAtual=PRESETS[inst].entrada;
+  ONDE_KEYS.forEach(k=>S[k]="");S.oAtual=PRESETS[inst].entrada;
+  S.cen={...CEN[inst],soRisco:!!(S.cen&&S.cen.soRisco)};
+}
+
+/* ---------- main math ---------- */
+function calc(o){return calcWith(Object.assign({},S,o||{}));}
+function calcWith(T){
+  const qtd=num(T.qtd),ent=num(T.entrada),stp=num(T.stop),alv=num(T.alvo),dir=T.lado==="C"?1:-1,cap=num(T.capital),pip=num(T.pip);
+  const m=multOf(T);
+  const spreadU=num(T.spread)*pip,slipU=num(T.slip)*pip;
+  const dStop=(stp-ent)*dir,dAlvo=(alv-ent)*dir;
+  const brutoStop=dStop*m*qtd,brutoAlvo=dAlvo*m*qtd;
+  const custoSpread=spreadU*m*qtd,slipStop=2*slipU*m*qtd,slipAlvo=slipU*m*qtd;
+  const com=num(T.comissao)*qtd;
+  const swapC=T.modo==="swing"?-num(T.swap)*num(T.noites)*qtd:0;
+  const fixos=com+swapC;
+  const custoStop=fixos+custoSpread+slipStop,custoAlvo=fixos+custoSpread+slipAlvo;
+  const liqStop=brutoStop-custoStop,liqAlvo=brutoAlvo-custoAlvo;
+  const aliq=Math.max(0,num(T.imposto)||0)/100;
+  const taxA=liqAlvo>0?liqAlvo*aliq:0;
+  const beMove=(fixos+custoSpread+slipAlvo)/(m*qtd);
+  const notional=T.inst==="BUSD"?num(T.contrato)*qtd:ent*num(T.contrato)*qtd;
+  const margem=notional/num(T.alav);
+  const perda=Math.abs(Math.min(liqStop,0));
+  const limite=cap*num(T.riscoPct)/100;
+  let qMax=perda>0?limite/(perda/qtd):NaN;qMax=Math.floor(qMax*100)/100;
+  return{qtd,ent,m,pip,pipValueLot:pip*m,pipsStop:dStop/pip,pipsAlvo:dAlvo/pip,brutoStop,brutoAlvo,com,swapC,custoSpread,slipStop,slipAlvo,
+    liqStop,liqAlvo,aliq,taxA,finalAlvo:liqAlvo-taxA,bePrice:ent+dir*beMove,beMove:beMove/pip,rr:perda>0?liqAlvo/perda:NaN,
+    cap,pct:cap>0?perda/cap*100:NaN,zerar:perda>0?Math.floor(cap/perda):NaN,metade:perda>0?Math.floor(cap*.5/perda):NaN,
+    riscoPct:num(T.riscoPct),limite,qMax,notional,margem,livre:cap-margem,alavEf:cap>0?notional/cap:NaN,lado:T.lado==="C"?"buy":"sell"};
+}
+
+function render(){
+  const R=calc(),I=INFO[S.inst];
+  $("k-stop").textContent=usd(R.liqStop);$("k-stop").className="v "+sgnCls(R.liqStop);
+  $("k-stop-d").textContent=nf(R.pipsStop,1)+" pips · "+nf(R.pct,1)+"% of balance";
+  $("k-alvo").textContent=usd(R.liqAlvo);$("k-alvo").className="v "+sgnCls(R.liqAlvo);
+  $("k-alvo-d").textContent="+"+nf(R.pipsAlvo,1)+" pips"+(R.aliq>0?" · after tax: "+usd(R.finalAlvo):"");
+  $("k-rr").textContent=Number.isFinite(R.rr)?"1 : "+nf(R.rr,2):"–";
+  $("k-be").textContent=nf(R.bePrice,I.dec);
+  $("k-be-d").textContent="needs "+nf(R.beMove,2)+" pips just to cover costs";
+  const row=(l,a,b,cls)=>`<tr${cls?` class="${cls}"`:""}><td>${l}</td><td class="n ${sgnCls(a)}">${usd(a)}</td><td class="n ${sgnCls(b)}">${usd(b)}</td></tr>`;
+  let h=row("Gross result (pips × "+usd(R.pipValueLot)+" per pip per lot × "+nf(R.qtd,2)+" lots)",R.brutoStop,R.brutoAlvo);
+  h+=row("Commission",-R.com,-R.com);
+  if(S.modo==="swing")h+=row("Swap ("+nf(num(S.noites),0)+" nights)",-R.swapC,-R.swapC);
+  h+=row("Spread ("+nf(num(S.spread),1)+" pips)",-R.custoSpread,-R.custoSpread);
+  h+=row("Slippage (stop: entry + exit · target: entry only)",-R.slipStop,-R.slipAlvo);
+  h+=row("Net result",R.liqStop,R.liqAlvo,"tot");
+  if(R.aliq>0){h+=row("Tax ("+nf(R.aliq*100,1)+"%, only on profit)",0,-R.taxA);h+=row("What you keep",R.liqStop,R.finalAlvo,"tot");}
+  $("nota").innerHTML=h;
+  const c=(l,v,cls)=>`<tr><td>${l}</td><td class="n ${cls||""}">${v}</td></tr>`;
+  let ch=c("Pip value (1 lot)",usd(R.pipValueLot));
+  ch+=c("Notional value (real exposure)",usd(R.notional));
+  ch+=c("Margin required (notional ÷ "+nf(num(S.alav),0)+")",usd(R.margem));
+  ch+=c("Free margin",usd(R.livre),sgnCls(R.livre));
+  ch+=c("Effective leverage (notional ÷ balance)",nf(R.alavEf,1)+"×");
+  ch+=c("Stops in a row to wipe the account",Number.isFinite(R.zerar)?String(R.zerar):"–");
+  ch+=c("Stops in a row to lose half",Number.isFinite(R.metade)?String(R.metade):"–");
+  ch+=c("Max size risking "+nf(R.riscoPct,1)+"% ("+usd(R.limite)+")",Number.isFinite(R.qMax)?nf(R.qMax,2)+" lots":"–");
+  $("cap").innerHTML=ch;
+  const al=[];
+  if(R.pipsStop>=0)al.push("The stop is on the wrong side of the entry for a "+R.lado+".");
+  if(R.pipsAlvo<=0)al.push("The target is on the wrong side of the entry for a "+R.lado+".");
+  if(R.livre<0)al.push("Required margin is larger than the balance: the broker would not open this position.");
+  if(R.qMax<0.01)al.push("Not even 0.01 lots fits a "+nf(R.riscoPct,1)+"% risk with this stop.");
+  else if(R.qtd>R.qMax)al.push("This size risks "+nf(R.pct,1)+"% of the balance, above your "+nf(R.riscoPct,1)+"% limit. The most that fits is "+nf(R.qMax,2)+" lots.");
+  if(R.liqAlvo<=0&&R.pipsAlvo>0)al.push("Even at the target, costs take the result to zero or below.");
+  $("alerts").innerHTML=al.map(a=>`<div class="alert">${a}</div>`).join("");
+  renderPM();renderOnde();if(S.tab==="cen")renderCen();syncClr();
+}
+
+/* ---------- average price ---------- */
+function calcPM(){
+  const m=multOf(S),custoLado=num(S.comissao)/2;
+  let pos=0,avg=0,realizado=0,custos=0;
+  for(const o of S.ops){
+    const q=num(o.qtd)*(o.lado==="C"?1:-1),p=num(o.preco);
+    if(!Number.isFinite(q)||!Number.isFinite(p)||q===0)continue;
+    custos+=Math.abs(q)*custoLado;
+    if(pos===0||Math.sign(pos)===Math.sign(q)){avg=(avg*Math.abs(pos)+p*Math.abs(q))/(Math.abs(pos)+Math.abs(q));pos=Math.round((pos+q)*1e6)/1e6;}
+    else{const f=Math.min(Math.abs(q),Math.abs(pos));realizado+=(p-avg)*f*Math.sign(pos)*m;const n=Math.round((pos+q)*1e6)/1e6;
+      if(n===0)avg=0;else if(Math.sign(n)!==Math.sign(pos))avg=p;pos=n;}
+  }
+  const atual=num(S.pmAtual),aberto=pos!==0?(atual-avg)*pos*m:0,saida=Math.abs(pos)*custoLado;
+  const be=pos!==0?avg+Math.sign(pos)*(custos+saida-realizado)/(Math.abs(pos)*m):NaN;
+  return{pos,avg,realizado,aberto,custos,saida,be,total:realizado+aberto-custos-saida};
+}
+function renderOps(){
+  $("ops").innerHTML=`<tr><td style="font-size:11px;color:var(--muted)">SIDE</td><td style="font-size:11px;color:var(--muted)">LOTS</td><td style="font-size:11px;color:var(--muted)">PRICE</td><td></td></tr>`+S.ops.map((o,i)=>`<tr>
+    <td><select data-i="${i}" data-k="lado" id="op-lado-${i}" aria-label="Side of order ${i+1}"><option value="C"${o.lado==="C"?" selected":""}>Buy</option><option value="V"${o.lado==="V"?" selected":""}>Sell</option></select></td>
+    <td><input data-i="${i}" data-k="qtd" id="op-qtd-${i}" value="${esc(o.qtd)}" inputmode="decimal" aria-label="Lots of order ${i+1}"></td>
+    <td><input data-i="${i}" data-k="preco" id="op-preco-${i}" value="${esc(o.preco)}" inputmode="decimal" aria-label="Price of order ${i+1}"></td>
+    <td><button class="x" type="button" data-del="${i}" aria-label="Remove order ${i+1}">×</button></td></tr>`).join("");
+}
+function renderPM(){
+  const P=calcPM(),I=INFO[S.inst],c=(l,v,cls)=>`<tr><td>${l}</td><td class="n ${cls||""}">${v}</td></tr>`;
+  let h=c("Position",P.pos===0?"flat":(P.pos>0?"long ":"short ")+nf(Math.abs(P.pos),2)+" lots");
+  h+=c("Average price",P.pos!==0?nf(P.avg,I.dec+1):"–");
+  h+=c("Realized result",usd(P.realizado),sgnCls(P.realizado));
+  h+=c("Open result (at current price)",usd(P.aberto),sgnCls(P.aberto));
+  h+=c("Commission paid + to close",usd(-(P.custos+P.saida)),"loss");
+  h+=c("Total if closed now",usd(P.total),sgnCls(P.total));
+  h+=c("Price to close at break-even",Number.isFinite(P.be)?nf(P.be,I.dec+1):"–");
+  $("pm-out").innerHTML=h;
+  const ref=num(S.entrada),fora=S.ops.some(o=>{const p=num(o.preco);return ref>0&&Number.isFinite(p)&&Math.abs(p/ref-1)>.25;});
+  $("pm-note").textContent=(fora?"Check: some orders are priced far from the entry on the Trade tab. They look like another instrument or an old example. ":"")+
+    (P.pos!==0?"Each pip against the position now costs "+usd(num(S.pip)*multOf(S)*Math.abs(P.pos))+". Adding against the position improves the average, but also raises this amount.":"");
+}
+
+/* ---------- price context ---------- */
+function renderOnde(){
+  const I=INFO[S.inst],pip=num(S.pip);
+  const mx=num(S.oMax),mn=num(S.oMin),at=num(S.oAtual),md=num(S.oMedia),atr=num(S.oAtr),rng=mx-mn;
+  const pos=rng>0?(at-mn)/rng:NaN,posM=rng>0?(md-mn)/rng:NaN,cl=v=>Math.max(0,Math.min(1,v))*100;
+  let bar=`<span class="end" style="left:0">${nf(mn,I.dec)}</span><span class="end" style="right:0">${nf(mx,I.dec)}</span>`;
+  if(Number.isFinite(posM))bar+=`<div class="mk avg" style="left:${cl(posM)}%"><span>avg ${nf(md,I.dec)}</span></div>`;
+  if(Number.isFinite(pos))bar+=`<div class="mk" style="left:${cl(pos)}%"><span>now ${nf(at,I.dec)}</span></div>`;
+  $("o-bar").innerHTML=bar;
+  const c=(l,v)=>`<tr><td>${l}</td><td class="n">${v}</td></tr>`;
+  let h=c("Period range",nf(rng/pip,1)+" pips");
+  h+=c("Position in the range (0% = low, 100% = high)",nf(pos*100,0)+"%");
+  h+=c("Distance from the high",nf((mx-at)/pip,1)+" pips");
+  h+=c("Distance from the low",nf((at-mn)/pip,1)+" pips");
+  h+=c("Distance from the average",nf((at-md)/pip,1)+" pips ("+nf((at-md)/md*100,2)+"%)");
+  if(atr>0){h+=c("Distance from the average in ATRs",nf((at-md)/atr,2)+" ATR");h+=c("Range in ATRs",nf(rng/atr,2)+" ATR");}
+  $("o-out").innerHTML=h;
+  const av=[];
+  if(rng<=0&&Number.isFinite(rng))av.push("The high must be above the low.");
+  if(rng>0&&Number.isFinite(at)&&(at>mx||at<mn))av.push("Current price is outside the high–low range. Check that the numbers are from the same period.");
+  if(rng>0&&Number.isFinite(md)&&Math.abs(md-(mx+mn)/2)>rng*5)av.push("The average is very far from the range. It looks like it came from another chart: update or clear it.");
+  if(rng>0&&atr>0&&(atr>rng*10||atr<rng/30))av.push("The ATR does not match the scale of this range. It looks like it came from another chart.");
+  $("o-alert").innerHTML=av.map(a=>`<div class="alert">${a}</div>`).join("");
+}
+
+/* ---------- scenarios ---------- */
+const lista=s=>String(s||"").split(";").map(num).filter(v=>Number.isFinite(v)&&v>0);
+function calcCen(){
+  const dir=S.lado==="C"?1:-1,ent=num(S.entrada),pip=num(S.pip);
+  const de=num(S.cen.stopDe),ate=num(S.cen.stopAte),ps=num(S.cen.stopPasso),qs=lista(S.cen.qtds),as=lista(S.cen.alvos),rows=[];
+  if(!(de>0&&ate>=de&&ps>0)||!qs.length||!as.length||!Number.isFinite(ent))return{rows,erro:"Fill in stop from/to/step, sizes and targets with numbers above zero."};
+  const limite=num(S.capital)*num(S.riscoPct)/100;
+  for(const q of qs)for(let sp=de;sp<=ate+1e-9;sp+=ps)for(const a of as){
+    if(rows.length>=3000)break;
+    const R=calc({qtd:String(q),stop:String(ent-dir*sp*pip),alvo:String(ent+dir*sp*a*pip)});
+    rows.push({q,sp:Math.round(sp*1e6)/1e6,ap:Math.round(sp*a*1e6)/1e6,perda:R.liqStop,ganho:R.liqAlvo,final:R.finalAlvo,rr:R.rr,pct:R.pct,zerar:R.zerar,cabe:Math.abs(Math.min(R.liqStop,0))<=limite});
+  }
+  return{rows,limite};
+}
+function renderCen(){
+  Object.entries(CEN_IDS).forEach(([id,k])=>{const el=$(id);if(document.activeElement!==el)el.value=S.cen[k]??"";});
+  $("cenSoRisco").checked=!!S.cen.soRisco;
+  const C=calcCen();
+  if(C.erro){$("cen-resumo").textContent=C.erro;$("cen-tab").innerHTML="";return;}
+  const vis=S.cen.soRisco?C.rows.filter(r=>r.cabe):C.rows,n=C.rows.filter(r=>r.cabe).length;
+  $("cen-resumo").textContent=C.rows.length+" scenarios for "+INFO[S.inst].nome+(C.rows.length>=3000?" (3000 limit)":"")+" · "+n+" fit a "+nf(num(S.riscoPct),1)+"% risk ("+usd(C.limite)+")"+(S.cen.soRisco?" · showing only those":"");
+  let h=`<thead><tr><th>Lots</th><th>Stop (pips)</th><th>Target (pips)</th><th>Loss at stop</th><th>Gain at target</th><th>After tax</th><th>R:R</th><th>% of balance</th><th>Stops to zero</th><th>Fits risk</th></tr></thead><tbody>`;
+  h+=vis.slice(0,1500).map(r=>`<tr><td class="n">${nf(r.q,2)}</td><td class="n">${nf(r.sp,1)}</td><td class="n">${nf(r.ap,1)}</td><td class="n ${sgnCls(r.perda)}">${usd(r.perda)}</td><td class="n ${sgnCls(r.ganho)}">${usd(r.ganho)}</td><td class="n">${usd(r.final)}</td><td class="n">${Number.isFinite(r.rr)?"1 : "+nf(r.rr,2):"–"}</td><td class="n">${nf(r.pct,1)}%</td><td class="n">${Number.isFinite(r.zerar)?r.zerar:"–"}</td><td class="${r.cabe?"gain":"loss"}">${r.cabe?"yes":"no"}</td></tr>`).join("");
+  if(vis.length>1500)h+=`<tr><td colspan="10">Showing 1500 of ${vis.length}. Copy the table to see all of them in a spreadsheet.</td></tr>`;
+  $("cen-tab").innerHTML=h+"</tbody>";
+}
+function cenCSV(){const C=calcCen(),vis=S.cen.soRisco?C.rows.filter(r=>r.cabe):C.rows,f=v=>Number.isFinite(v)?String(Math.round(v*100)/100):"";
+  return ["Lots\tStop pips\tTarget pips\tLoss at stop (US$)\tGain at target (US$)\tAfter tax (US$)\tR:R\t% of balance\tStops to zero\tFits risk"].concat(vis.map(r=>[f(r.q),f(r.sp),f(r.ap),f(r.perda),f(r.ganho),f(r.final),f(r.rr),f(r.pct),Number.isFinite(r.zerar)?r.zerar:"",r.cabe?"yes":"no"].join("\t"))).join("\n");}
+
+/* ---------- check and fix ---------- */
+function corrigir(nivel){
+  const I=INFO[S.inst],P=PRESETS[S.inst],log=[],campos={},full=nivel==="completo";log.campos=campos;
+  const fmt=v=>String(Math.round(v*1e6)/1e6);
+  const note=(k,msg)=>{log.push(msg);campos[k]=campos[k]?campos[k]+" "+msg:msg;};
+  const put=(k,v,msg)=>{const n=fmt(v);if(String(S[k])!==n){S[k]=n;if(msg)note(k,msg);}};
+  const tick=I.tick,rt=v=>Math.round(Math.round(v/tick)*tick*1e6)/1e6;
+  const NM={entrada:"Entry",stop:"Stop",alvo:"Target",pmAtual:"Current price (average price tab)",oMax:"High",oMin:"Low",oAtual:"Current price",oMedia:"Average",capital:"Balance",riscoPct:"Risk per trade",spread:"Spread",slip:"Slippage",comissao:"Commission",alav:"Leverage",noites:"Nights",imposto:"Tax"};
+  const vals=[..."entrada stop alvo pmAtual oMax oMin oAtual oMedia".split(" ").map(k=>num(S[k])),...S.ops.map(o=>num(o.preco))].filter(v=>v>0).sort((a,b)=>a-b);
+  const ref=(()=>{const t=["entrada","stop","alvo"].map(k=>num(S[k])).filter(v=>v>0).sort((a,b)=>a-b);  /* a operação manda na escala; o resto só se ela estiver incompleta */
+    if(t.length>=2)return t[Math.floor(t.length/2)];return vals.length?vals[Math.floor(vals.length/2)]:num(P.entrada);})();
+  const scale=v=>{if(!(v>0)||!(ref>0)||Math.abs(v/ref-1)<=.5)return v;for(let k=-6;k<=6;k++){const t=v*Math.pow(10,k);if(Math.abs(t/ref-1)<=.3)return t;}return v;};
+  const fixP=(k,obrig)=>{
+    const raw=S[k],v=num(raw);
+    if(!Number.isFinite(v)){if(obrig)put(k,num(P[k]),NM[k]+" was empty or not a number; filled with the example "+P[k]+".");return;}
+    let n=Math.abs(v),msg=v<0?NM[k]+": a price cannot be negative, sign removed.":null;
+    const e=scale(n);if(e!==n){msg=NM[k]+": \""+raw+"\" reads as "+fmt(n)+", out of scale (misplaced dot or comma). Changed to "+fmt(e)+".";n=e;}
+    if(k==="oMedia"){put(k,n,msg);return;}
+    const r=rt(n);if(Math.abs(r-n)>1e-9&&!msg)msg=NM[k]+": "+fmt(n)+" rounded to "+fmt(r)+" (this instrument moves in steps of "+fmt(tick)+").";
+    put(k,r,msg);
+  };
+  ["entrada","stop","alvo"].forEach(k=>fixP(k,full));
+  ["pmAtual","oMax","oMin","oAtual","oMedia"].forEach(k=>fixP(k,false));
+  S.ops.forEach((o,i)=>{const v=num(o.preco);if(!Number.isFinite(v))return;const n=rt(scale(Math.abs(v))),s=fmt(n);
+    if(String(o.preco)!==s){if(Math.abs(n-v)>tick)note("op-preco-"+i,"Order "+(i+1)+": price \""+o.preco+"\" changed to "+s+".");o.preco=s;}
+    let q=Math.abs(num(o.qtd));if(!Number.isFinite(q)||q===0)q=.01;q=Math.max(.01,Math.round(q*100)/100);const qs=q.toFixed(2);
+    if(num(o.qtd)!==q){note("op-qtd-"+i,"Order "+(i+1)+": size "+(o.qtd||"empty")+" became "+qs+" lots.");o.qtd=qs;}});
+  if(full||Number.isFinite(num(S.qtd))){let q=num(S.qtd);const raw=S.qtd;if(!Number.isFinite(q)||q===0)q=num(P.qtd);q=Math.max(.01,Math.round(Math.abs(q)*100)/100);
+    if(num(S.qtd)!==q){S.qtd=q.toFixed(2);note("qtd","Lots: "+(raw||"empty")+" became "+q.toFixed(2)+" (minimum 0.01, in steps of 0.01).");}}
+  ["spread","slip","comissao","alav","noites","capital","riscoPct","imposto"].forEach(k=>{
+    const v=num(S[k]),def=k==="capital"?10000:k==="riscoPct"?1:k==="imposto"?0:num(P[k]);
+    if(!Number.isFinite(v)){if(full)put(k,def,NM[k]+" was empty; filled with "+def+(k==="capital"||k==="riscoPct"?" (example, use your own).":" (example)."));}
+    else if(v<0)put(k,-v,NM[k]+" cannot be negative, sign removed.");});
+  if(num(S.noites)%1)put("noites",Math.round(num(S.noites)),"Nights rounded to a whole number.");
+  {const r=num(S.riscoPct);if(r>20&&r<=100)note("riscoPct","A "+nf(r,1)+"% risk per trade looks too high. Did you mean "+nf(r/100,2)+"% or "+nf(r/10,1)+"%?");if(r>100)put("riscoPct",1,"Risk per trade above 100% is impossible. Set back to 1% (use your own).");}
+  {const t=num(S.imposto);if(t>60)put("imposto",0,"A tax above 60% looks like a typo. Set to 0 (use your own rate).");}
+  {const al=num(S.alav);if(al>0&&al<1)put("alav",1/al,"Leverage written as a fraction, changed to 1:"+nf(1/al,0)+".");}
+  if(full){
+    const sw=num(S.swap);if(!Number.isFinite(sw))put("swap",num(P.swap),"Swap was empty; filled with the example "+P.swap+".");
+    if(num(S.contrato)!==num(P.contrato))put("contrato",num(P.contrato),"Contract size "+(S.contrato||"empty")+" is not the standard for "+I.nome+". Set to "+P.contrato+" (check your broker).");
+    if(num(S.pip)!==num(P.pip))put("pip",num(P.pip),"Pip size "+(S.pip||"empty")+" is not the standard for "+I.nome+". Set to "+P.pip+".");
+    const e=num(S.entrada),st=num(S.stop),av=num(S.alvo),d=S.lado==="C"?1:-1,se=(st-e)*d>0,ae=(av-e)*d<0;
+    if(se&&ae){S.lado=S.lado==="C"?"V":"C";note("lado","Stop and target were both on the opposite side: this is a "+(S.lado==="C"?"buy":"sell")+". Side switched.");}
+    else{if(se)put("stop",rt(e-(st-e)),"The stop was on the wrong side for a "+(S.lado==="C"?"buy":"sell")+". Mirrored to "+fmt(rt(e-(st-e)))+" (same distance).");
+      if(ae)put("alvo",rt(e-(av-e)),"The target was on the wrong side for a "+(S.lado==="C"?"buy":"sell")+". Mirrored to "+fmt(rt(e-(av-e)))+" (same distance).");}
+    if(num(S.stop)===e)note("stop","Stop equals the entry: there is no defined risk.");
+    if(num(S.alvo)===e)note("alvo","Target equals the entry: there is no possible gain.");
+    let mx=num(S.oMax),mn=num(S.oMin);
+    if(mx<mn){const t=S.oMax;S.oMax=S.oMin;S.oMin=t;note("oMax","High and low were swapped.");mx=num(S.oMax);mn=num(S.oMin);}
+    const rng=mx-mn,md=num(S.oMedia),atr=num(S.oAtr);
+    if(rng>0&&Number.isFinite(md)&&Math.abs(md-(mx+mn)/2)>rng*5){S.oMedia="";note("oMedia","The average came from another instrument or chart. Field cleared.");}
+    if(rng>0&&atr>0&&(atr>rng*10||atr<rng/30)){S.oAtr="";note("oAtr","The ATR does not match this price range. Field cleared.");}
+    const c=S.cen;if(num(c.stopDe)>num(c.stopAte)){const t=c.stopDe;c.stopDe=c.stopAte;c.stopAte=t;note("cenStopDe","Scenarios: stop from/to were reversed.");}
+    if(!(num(c.stopPasso)>0)){c.stopPasso=CEN[S.inst].stopPasso;note("cenStopPasso","Scenarios: empty or zero step, set to "+c.stopPasso+".");}
+  }
+  return log;
+}
+
+/* ---------- wiring ---------- */
+function fillInputs(){
+  TEXT_IDS.forEach(id=>{const el=$(id);if(el&&document.activeElement!==el)el.value=S[id]??"";});
+  $("inst").value=S.inst;
+  document.querySelectorAll("#lado button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===S.lado)));
+  document.querySelectorAll("#modo button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===S.modo)));
+  renderOps();
+}
+TEXT_IDS.forEach(id=>{const el=$(id);el.addEventListener("input",()=>{S[id]=el.value;save();render();});el.addEventListener("change",()=>{if(S.autoFix)runFix("leve");});});
+$("inst").addEventListener("change",()=>{applyPreset($("inst").value);save();marcarCampos({});fillInputs();render();});
+$("lado").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;S.lado=b.dataset.v;save();fillInputs();render();});
+$("modo").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;S.modo=b.dataset.v;save();fillInputs();render();});
+$("ops").addEventListener("input",e=>{const t=e.target;if(t.dataset.i==null)return;S.ops[+t.dataset.i][t.dataset.k]=t.value;save();render();});
+$("ops").addEventListener("change",e=>{const t=e.target;if(t.tagName==="SELECT"){S.ops[+t.dataset.i].lado=t.value;save();render();}else if(S.autoFix)runFix("leve");});
+$("ops").addEventListener("click",e=>{const b=e.target.closest("[data-del]");if(!b)return;S.ops.splice(+b.dataset.del,1);save();renderOps();render();});
+$("add-op").addEventListener("click",()=>{const l=S.ops[S.ops.length-1];S.ops.push({lado:l?l.lado:"C",qtd:l?l.qtd:S.qtd,preco:l?l.preco:S.entrada});save();renderOps();render();});
+Object.entries(CEN_IDS).forEach(([id,k])=>$(id).addEventListener("input",()=>{S.cen[k]=$(id).value;save();renderCen();syncClr();}));
+$("cenSoRisco").addEventListener("change",()=>{S.cen.soRisco=$("cenSoRisco").checked;save();renderCen();});
+$("cenCopiar").addEventListener("click",()=>{const t=cenCSV(),b=$("cenCopiar"),ta=$("cen-csv");
+  const fb=()=>{ta.value=t;ta.classList.remove("hide");ta.select();b.textContent="Selected: press Ctrl+C";};
+  try{navigator.clipboard.writeText(t).then(()=>{b.textContent="Copied. Paste into a spreadsheet";setTimeout(()=>b.textContent="Copy table (for a spreadsheet)",2500);},fb);}catch(e){fb();}});
+function setTab(t){if(!["op","pm","onde","cen","ex"].includes(t))t="op";S.tab=t;save();
+  document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab===t)));
+  ["op","pm","onde","cen","ex"].forEach(v=>$("view-"+v).classList.toggle("hide",t!==v));if(t==="cen")renderCen();}
+document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>setTab(b.dataset.tab)));
+
+let undoSnap=null,marcas={};
+const ancora=el=>(el.closest&&el.closest(".inwrap"))||el;
+function limparMarca(el){if(!el)return;el.classList.remove("fixed");const n=ancora(el).nextElementSibling;if(n&&n.classList&&n.classList.contains("fixmsg"))n.remove();}
+function marcarCampos(campos){Object.keys(marcas).forEach(id=>limparMarca($(id)));marcas={};
+  Object.entries(campos||{}).forEach(([id,msg])=>{const el=$(id);if(!el||!el.insertAdjacentElement)return;el.classList.add("fixed");
+    const s=document.createElement("small");s.className="fixmsg";s.textContent="Fixed: "+msg;ancora(el).insertAdjacentElement("afterend",s);marcas[id]=1;});}
+function showFix(log,nivel){const box=$("fix-log");
+  if(!log.length){if(nivel==="completo"){box.innerHTML='<span class="t">All good</span><div>Nothing to fix: the fields are consistent for '+esc(INFO[S.inst].nome)+'.</div>';box.classList.remove("hide");}return;}
+  box.innerHTML='<span class="t">'+(nivel==="completo"?"Fixes made":"Fixed when you left the field")+" ("+log.length+')</span><ul>'+log.map(l=>"<li>"+esc(l)+"</li>").join("")+"</ul>";
+  box.classList.remove("hide");$("fix-undo").classList.toggle("hide",!undoSnap);}
+function runFix(nivel){const a=JSON.stringify(S),log=corrigir(nivel);if(JSON.stringify(S)!==a)undoSnap=a;
+  save();fillInputs();render();showFix(log,nivel);if(log.length||nivel==="completo")marcarCampos(log.campos);return log;}
+document.addEventListener("input",e=>{const t=e.target;if(t&&marcas[t.id]){limparMarca(t);delete marcas[t.id];}syncClr();});
+document.addEventListener("keydown",e=>{const t=e.target;if(e.key==="Enter"&&t&&t.tagName==="INPUT"&&t.type!=="checkbox"){e.preventDefault();t.blur();runFix("completo");}});
+$("fix-auto").checked=!!S.autoFix;
+$("fix-auto").addEventListener("change",()=>{S.autoFix=$("fix-auto").checked;save();});
+$("fix-btn").addEventListener("click",()=>runFix("completo"));
+$("fix-undo").addEventListener("click",()=>{if(!undoSnap)return;try{S=JSON.parse(undoSnap);}catch(e){return;}undoSnap=null;save();marcarCampos({});fillInputs();setTab(S.tab);render();
+  $("fix-undo").classList.add("hide");$("fix-log").innerHTML='<span class="t">Undone</span><div>The fields are back to what they were before.</div>';$("fix-log").classList.remove("hide");});
+
+/* clear buttons */
+const CLR_IDS=[...TEXT_IDS,...Object.keys(CEN_IDS)];
+function setCampo(id,v){if(CEN_IDS[id])S.cen[CEN_IDS[id]]=v;else S[id]=v;}
+CLR_IDS.forEach(id=>{const el=$(id);if(!el||!el.parentNode)return;const w=document.createElement("span");w.className="inwrap";el.parentNode.insertBefore(w,el);w.appendChild(el);
+  const b=document.createElement("button");b.type="button";b.className="clr";b.textContent="×";b.title="Clear this field";b.setAttribute("aria-label","Clear this field");
+  b.addEventListener("click",()=>{setCampo(id,"");el.value="";limparMarca(el);delete marcas[id];save();render();el.focus();});w.appendChild(b);});
+function syncClr(){if(typeof CLR_IDS==="undefined")return;CLR_IDS.forEach(id=>{const el=$(id),b=el&&el.nextElementSibling;if(b&&b.classList&&b.classList.contains("clr"))b.hidden=!el.value;});}
+const GRUPOS={op:{nome:"the Trade tab",ids:["qtd","entrada","stop","alvo","spread","slip"]},pm:{nome:"Average price",ids:["pmAtual"],ops:true},onde:{nome:"Price context",ids:ONDE_KEYS},cen:{nome:"Scenarios",ids:Object.keys(CEN_IDS)},tudo:{nome:"every tab",ids:CLR_IDS,ops:true}};
+function apagar(g){const G=GRUPOS[g];undoSnap=JSON.stringify(S);G.ids.forEach(id=>setCampo(id,""));if(G.ops)S.ops=[];
+  save();marcarCampos({});fillInputs();render();
+  $("fix-log").innerHTML='<span class="t">Cleared</span><div>'+(g==="tudo"?"Every field was cleared. Instrument, side and holding stay as they were.":"Fields on "+esc(G.nome)+" cleared.")+' Start fresh, or use Undo to go back. "Check and fix" fills anything left empty with example values.</div>';
+  $("fix-log").classList.remove("hide");$("fix-undo").classList.remove("hide");}
+document.querySelectorAll("[data-apagar]").forEach(b=>b.addEventListener("click",()=>apagar(b.dataset.apagar)));
+
+/* examples */
+function renderEx(){$("exs").innerHTML=EXEMPLOS.map(ex=>{const R=calcWith(Object.assign({},S,ex.s));
+  return `<div class="ex"><span class="tag">${esc(INFO[ex.s.inst].nome)} · ${ex.s.lado==="C"?"buy":"sell"} · ${ex.s.modo==="day"?"intraday":"overnight"}</span>
+    <h4>${esc(ex.titulo)}</h4><p>${esc(ex.resumo)}</p>
+    <dl><dt>If the stop is hit</dt><dd class="${sgnCls(R.liqStop)}">${usd(R.liqStop)}</dd><dt>If the target is hit</dt><dd class="${sgnCls(R.liqAlvo)}">${usd(R.liqAlvo)}</dd>
+    <dt>Risk : reward</dt><dd>${Number.isFinite(R.rr)?"1 : "+nf(R.rr,2):"–"}</dd><dt>% of balance at stop</dt><dd>${nf(R.pct,1)}%</dd><dt>Pip value (1 lot)</dt><dd>${usd(R.pipValueLot)}</dd></dl>
+    <p class="mostra">Shows: ${esc(ex.mostra)}</p><button class="btn" type="button" data-ex="${ex.id}">Load this example</button></div>`;}).join("");}
+$("exs").addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-ex]");if(!b)return;const ex=EXEMPLOS.find(x=>x.id===b.dataset.ex);if(!ex)return;
+  undoSnap=JSON.stringify(S);Object.assign(S,JSON.parse(JSON.stringify(ex.s)));save();marcarCampos({});fillInputs();setTab("op");render();
+  $("fix-log").innerHTML='<span class="t">Example loaded</span><div>'+esc(ex.titulo)+'. Every tab is filled in: see Average price, Price context and Scenarios too. The numbers are made up. Use Undo to go back.</div>';
+  $("fix-log").classList.remove("hide");$("fix-undo").classList.remove("hide");});
+
+fillInputs();setTab(S.tab);render();renderEx();syncClr();
+})();
+</script>
+</body>
+</html>
