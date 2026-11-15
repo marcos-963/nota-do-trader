@@ -169,6 +169,17 @@ textarea{font-family:var(--f-body);resize:vertical}
 .ideia .t{font:700 12px var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
 .ideia ul{margin:0;padding-left:18px;display:grid;gap:3px}
 .ideia .rod{display:flex;flex-wrap:wrap;gap:8px;align-items:center;color:var(--muted);font-size:12px}
+.mz-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+#mz-kpis .kpi .v{font-size:17px;overflow-wrap:anywhere}
+@media (max-width:420px){#mz-kpis .kpi .v{font-size:15px}}
+.mz-grid .full{grid-column:1/-1}
+.mz-alerts{display:grid;gap:6px;margin-top:10px}
+.mz-al{border:1px solid var(--line);border-left:4px solid var(--muted);border-radius:6px;padding:7px 10px;font-size:13px;background:var(--bg);color:var(--ink)}
+.mz-al.alto{border-left-color:var(--loss)}
+.mz-al.medio{border-left-color:var(--warn);background:var(--warn-bg)}
+.mz-al.ok{border-left-color:var(--gain)}
+.mz-al small{display:block;color:var(--muted);margin-top:2px}
+@media (max-width:420px){.mz-grid{grid-template-columns:1fr}}
 .fix-log ul{margin:6px 0 0;padding-left:18px}
 .fix-log li{margin-bottom:3px}
 .fix-log .t{font:600 12px var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
@@ -208,6 +219,7 @@ textarea{font-family:var(--f-body);resize:vertical}
     <button class="tab" role="tab" id="tab-onde" aria-selected="false" data-tab="onde">Onde está o preço</button>
     <button class="tab" role="tab" id="tab-cen" aria-selected="false" data-tab="cen">Cenários</button>
     <button class="tab" role="tab" id="tab-ex" aria-selected="false" data-tab="ex">Exemplos</button>
+    <button class="tab" role="tab" id="tab-mesa" aria-selected="false" data-tab="mesa">Mesa proprietária</button>
   </div>
 </header>
 
@@ -336,6 +348,39 @@ textarea{font-family:var(--f-body);resize:vertical}
       <div id="o-alert"></div>
     </div>
 
+    <div id="view-mesa" class="hide">
+      <div class="panel-head"><h2>Mesa proprietária</h2></div>
+      <p class="note" style="margin-top:0">A matemática das regras da mesa: até onde a conta vai antes de ser eliminada, quanto ainda pode perder hoje, quanto falta para a meta e se um dia muito bom quebra a regra de consistência. Valores em dólar. Copie as regras do regulamento da sua mesa: cada mesa usa números diferentes.</p>
+      <h3>Regras da mesa</h3>
+      <div class="mz-grid">
+        <label>Tamanho da conta (US$)<input id="mz-conta" inputmode="decimal"></label>
+        <label>Drawdown máximo (US$)<input id="mz-dd" inputmode="decimal"></label>
+        <label>Tipo de drawdown<select id="mz-tipo"><option value="estatico">Estático (fixo no saldo inicial)</option><option value="movel">Móvel (trailing, sobe com o pico)</option></select></label>
+        <label>Limite de perda diária (US$)<input id="mz-diario" inputmode="decimal" placeholder="0 = a mesa não tem"></label>
+        <label>Meta de lucro (US$)<input id="mz-meta" inputmode="decimal"></label>
+        <label>Consistência: melhor dia até (% do lucro)<input id="mz-consist" inputmode="decimal" placeholder="0 = a mesa não tem"></label>
+        <label class="full" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="mz-trava" style="width:auto"> O drawdown móvel para de subir quando chega ao saldo inicial</label>
+      </div>
+      <h3>Situação da conta</h3>
+      <div class="mz-grid">
+        <label>Saldo atual (US$)<input id="mz-saldo" inputmode="decimal"></label>
+        <label>Maior saldo já atingido (US$)<input id="mz-pico" inputmode="decimal"></label>
+        <label>Resultado de hoje (US$)<input id="mz-hoje" inputmode="decimal" placeholder="negativo se perdeu"></label>
+        <label>Melhor dia até agora (US$)<input id="mz-melhor" inputmode="decimal"></label>
+      </div>
+      <h3>Tamanho da posição</h3>
+      <div class="mz-grid">
+        <label>Contrato<select id="mz-inst"><option value="MES">MES (micro S&amp;P 500): US$ 5 por ponto</option><option value="MNQ">MNQ (micro Nasdaq): US$ 2 por ponto</option><option value="M2K">M2K (micro Russell): US$ 5 por ponto</option><option value="MGC">MGC (micro ouro): US$ 10 por ponto</option><option value="ES">ES (S&amp;P 500): US$ 50 por ponto</option><option value="NQ">NQ (Nasdaq): US$ 20 por ponto</option><option value="FX">Forex, lote padrão: US$ 10 por pip</option></select></label>
+        <label>Stop <small id="mz-un">(pontos)</small><input id="mz-stop" inputmode="decimal"></label>
+        <label>Comissão ida e volta por contrato (US$)<input id="mz-com" inputmode="decimal"></label>
+        <label>Risco por operação (% do drawdown)<input id="mz-risco" inputmode="decimal"></label>
+      </div>
+      <h3>Resultado</h3>
+      <div class="kpis" id="mz-kpis"></div>
+      <div class="mz-alerts" id="mz-alerts" aria-live="polite"></div>
+      <p class="note">Ferramenta educativa, sem vínculo com nenhuma mesa. As regras mudam: confira sempre no regulamento atual da sua mesa (drawdown por fechamento ou por tick, horário do limite diário, como a consistência é medida).</p>
+    </div>
+
     <div id="view-ex" class="hide">
       <div class="panel-head"><h2>Exemplos</h2></div>
       <p class="note" style="margin-top:0">Uma operação completa para cada ativo, com todas as abas preenchidas: operação, preço médio, onde está o preço e cenários. Os preços são fictícios. Carregar um exemplo substitui o que está na tela; o botão Desfazer traz de volta.</p>
@@ -399,6 +444,7 @@ textarea{font-family:var(--f-body);resize:vertical}
     <li><a href="https://www.amazon.com.br/s?k=Wyckoff+na+Pr%C3%A1tica+Resili%C3%AAncia+Marcus+Deleon" target="_blank" rel="noopener">Wyckoff na Prática: Resiliência</a> · <a href="?livro=wyckoff">abrir o mentor com o checklist deste livro</a></li>
     <li><a href="https://www.amazon.com.br/s?k=Flow+%26+Order+Leitura+Institucional+do+Mercado+Marcus+Deleon" target="_blank" rel="noopener">Flow &amp; Order: Leitura Institucional do Mercado</a></li>
     <li><a href="https://www.amazon.com.br/s?k=O+M%C3%A9todo+Smart+Money+Wyckoff+Elliott+SMC+Marcus+Deleon" target="_blank" rel="noopener">O Método Smart Money: Wyckoff, Elliott e SMC</a> · <a href="?livro=metodo">abrir o mentor com o checklist deste livro</a></li>
+    <li><a href="https://www.amazon.com.br/s?k=Guia+de+Sobreviv%C3%AAncia+nas+Mesas+Propriet%C3%A1rias+Marcus+Deleon" target="_blank" rel="noopener">Guia de Sobrevivência nas Mesas Proprietárias</a> · <a href="?livro=mesas">abrir a aba Mesa proprietária</a></li>
   </ul>
   <p style="margin:0"><a href="https://www.amazon.com.br/Marcus-Deleon/e/B0F8TLHTWG" target="_blank" rel="noopener">Todos os livros de Marcus Deleon na Amazon</a></p>
   <p style="margin:0">Ferramenta educativa. Não é recomendação de investimento, não indica compra ou venda de nenhum ativo e não substitui orientação de profissional credenciado. Operar alavancado pode causar perdas maiores que o capital. Taxas, margens e regras de imposto mudam e variam por corretora: confira sempre na sua nota de corretagem e com um contador. Os dados ficam só no seu navegador; nada é enviado. <a href="en/">English version (Forex and gold)</a>.</p>
@@ -857,8 +903,8 @@ $("ops").addEventListener("input",e=>{const t=e.target;if(t.dataset.i==null)retu
 $("ops").addEventListener("change",e=>{const t=e.target;if(t.tagName!=="SELECT")return;S.ops[+t.dataset.i].lado=t.value;save();render();});
 $("ops").addEventListener("click",e=>{const b=e.target.closest("[data-del]");if(!b)return;S.ops.splice(+b.dataset.del,1);save();renderOps();render();});
 $("add-op").addEventListener("click",()=>{const last=S.ops[S.ops.length-1];S.ops.push({lado:last?last.lado:"C",qtd:last?last.qtd:"1",preco:last?last.preco:S.entrada});save();renderOps();render();});
-function setTab(t){if(!["op","pm","onde","cen","ex"].includes(t))t="op";S.tab=t;save();document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab===t)));
-  ["op","pm","onde","cen","ex"].forEach(v=>$("view-"+v).classList.toggle("hide",t!==v));
+function setTab(t){if(!["op","pm","onde","cen","ex","mesa"].includes(t))t="op";S.tab=t;save();document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab===t)));
+  ["op","pm","onde","cen","ex","mesa"].forEach(v=>$("view-"+v).classList.toggle("hide",t!==v));
   if(t==="cen")renderCen();}
 
 /* ---------- cenários ---------- */
@@ -1186,6 +1232,84 @@ function renderIdeia(){
 }
 document.addEventListener("click",e=>{if(e.target&&e.target.id==="ideia-ok")runFix("completo");});
 { const renderBaseIdeia=render; render=function(){renderBaseIdeia.apply(this,arguments);try{renderIdeia();}catch(e){}}; renderIdeia(); }
+
+
+/* ---------- mesa proprietária ---------- */
+const MZ_INST={MES:{vp:5,un:"pontos"},MNQ:{vp:2,un:"pontos"},M2K:{vp:5,un:"pontos"},MGC:{vp:10,un:"pontos"},ES:{vp:50,un:"pontos"},NQ:{vp:20,un:"pontos"},FX:{vp:10,un:"pips"}};
+const MZ_IDS={"mz-conta":"conta","mz-dd":"dd","mz-tipo":"tipo","mz-diario":"diario","mz-meta":"meta","mz-consist":"consist","mz-saldo":"saldo","mz-pico":"pico","mz-hoje":"hoje","mz-melhor":"melhor","mz-inst":"inst","mz-stop":"stop","mz-com":"com","mz-risco":"risco"};
+function ensureMesa(){
+  const base={conta:"50000",dd:"2500",tipo:"movel",trava:true,diario:"1000",meta:"3000",consist:"40",saldo:"50000",pico:"50000",hoje:"0",melhor:"0",inst:"MES",stop:"8",com:"1,5",risco:"3"};
+  if(!S.mesa||typeof S.mesa!=="object")S.mesa={};
+  S.mesa={...base,...S.mesa};return S.mesa;
+}
+const usdF=new Intl.NumberFormat("pt-BR",{style:"currency",currency:"USD"});
+const usd=n=>Number.isFinite(n)?usdF.format(n):"–";
+function calcMesa(){
+  const M=ensureMesa(), v=k=>{const x=num(M[k]);return Number.isFinite(x)?x:0;};
+  const conta=v("conta"), dd=v("dd"), saldo=v("saldo")||conta, pico=Math.max(v("pico"),saldo,conta), hoje=v("hoje"), diario=v("diario"), meta=v("meta"), c=v("consist")/100, melhor=Math.max(v("melhor"),hoje);
+  let piso=conta-dd;
+  if(M.tipo==="movel"){piso=pico-dd;if(M.trava)piso=Math.min(piso,conta);}
+  const dist=saldo-piso, lucro=saldo-conta;
+  const diarioRest=diario>0?diario+Math.min(hoje,0):Infinity;
+  const folga=Math.min(dist,diarioRest);
+  const I=MZ_INST[M.inst]||MZ_INST.MES, stop=v("stop"), com=v("com");
+  const custo1=stop*I.vp+com;
+  const alvoRisco=dd*v("risco")/100;
+  const contratos=custo1>0?Math.floor(alvoRisco/custo1):0;
+  const riscoOp=Math.max(contratos,1)*custo1;
+  const stopsElim=riscoOp>0?Math.floor(dist/riscoOp):Infinity;
+  const stopsHoje=riscoOp>0&&Number.isFinite(diarioRest)?Math.floor(diarioRest/riscoOp):Infinity;
+  const falta=meta-lucro;
+  let consist=null;
+  if(c>0){
+    const necessario=melhor>0?melhor/c:0;
+    const p0=lucro-hoje;
+    consist={c,necessario,ok:lucro>0?melhor<=c*lucro+1e-9:true,maxHoje:p0>0?c*p0/(1-c):null,metaEfetiva:Math.max(meta,necessario)};
+  }
+  return {M,conta,dd,saldo,pico,hoje,diario,meta,melhor,piso,dist,lucro,diarioRest,folga,I,stop,custo1,alvoRisco,contratos,riscoOp,stopsElim,stopsHoje,falta,consist};
+}
+function renderMesa(){
+  if(!$("view-mesa"))return;
+  const R=calcMesa(), M=R.M, act=document.activeElement;
+  Object.entries(MZ_IDS).forEach(([id,k])=>{const el=$(id);if(el&&el!==act)el.value=M[k]??"";});
+  $("mz-trava").checked=!!M.trava;$("mz-trava").closest("label").style.display=M.tipo==="movel"?"":"none";
+  $("mz-un").textContent="("+R.I.un+")";
+  const k=(t,val,d,cls)=>'<div class="kpi"><div class="k">'+t+'</div><div class="v '+(cls||"")+'">'+val+'</div>'+(d?'<div class="d">'+d+'</div>':"")+'</div>';
+  const fin=n=>Number.isFinite(n)?n:"sem limite";
+  let h="";
+  h+=k("Conta eliminada em",usd(R.piso),M.tipo==="movel"?"drawdown móvel: pico "+usd(R.pico)+" menos "+usd(R.dd)+(M.trava&&R.piso>=R.conta?" (já travou no saldo inicial)":""):"drawdown estático");
+  h+=k("Distância até a eliminação",usd(R.dist),nf(R.dd>0?R.dist/R.dd*100:0,0)+"% do drawdown ainda disponível",R.dist<=R.dd*.25?"loss":"");
+  h+=k("Ainda pode perder hoje",Number.isFinite(R.diarioRest)?usd(R.diarioRest):"sem limite diário",Number.isFinite(R.diarioRest)?"limite de "+usd(R.diario)+(R.hoje<0?", já perdeu "+usd(-R.hoje):""):"",Number.isFinite(R.diarioRest)&&R.diarioRest<=R.riscoOp?"loss":"");
+  h+=k("Contratos pela sua regra",String(R.contratos),R.custo1>0?nf(R.M.risco==null?0:num(R.M.risco),1)+"% do drawdown = "+usd(R.alvoRisco)+"; 1 contrato no stop custa "+usd(R.custo1):"preencha o stop",R.contratos<1?"loss":"");
+  h+=k("Stops seguidos até eliminar",String(fin(R.stopsElim)),"com "+Math.max(R.contratos,1)+" contrato(s): "+usd(R.riscoOp)+" por stop",R.stopsElim<5?"loss":"");
+  h+=k("Stops até o limite de hoje",String(fin(R.stopsHoje)),"",Number.isFinite(R.stopsHoje)&&R.stopsHoje<2?"loss":"");
+  h+=k("Lucro até agora",usd(R.lucro),R.falta>0?"faltam "+usd(R.falta)+" para a meta de "+usd(R.meta):"meta de "+usd(R.meta)+" atingida",R.lucro>=0?"gain":"loss");
+  if(R.consist)h+=k("Consistência",R.consist.ok?"dentro":"fora",R.melhor>0?"melhor dia "+usd(R.melhor)+" pede lucro total de "+usd(R.consist.necessario):"ainda sem dia de lucro",R.consist.ok?"gain":"loss");
+  $("mz-kpis").innerHTML=h;
+  const A=[], al=(n,t,s)=>A.push('<div class="mz-al '+n+'">'+t+(s?"<small>"+s+"</small>":"")+"</div>");
+  const pctDD=R.dd>0?R.riscoOp/R.dd*100:0;
+  if(R.contratos<1&&R.custo1>0)al("alto","Com stop de "+nf(R.stop,R.I.un==="pips"?1:2)+" "+R.I.un+", nem 1 contrato cabe em "+nf(num(M.risco),1)+"% do drawdown ("+usd(R.alvoRisco)+"). Um contrato arrisca "+usd(R.custo1)+", ou "+nf(pctDD,1)+"% do drawdown.","Opções: stop menor, contrato menor (micro) ou aceitar um risco maior por operação, sabendo que isso encurta a sequência de stops que a conta aguenta.");
+  if(pctDD>5)al("medio","Cada stop custa "+nf(pctDD,1)+"% do drawdown. O livro usa como faixa de partida de 2% a 5% do drawdown por operação.","Com 20% do drawdown por operação, 5 stops seguidos eliminam a conta. Sequências assim acontecem até com estratégias boas.");
+  else if(R.contratos>=1&&pctDD<2)al("ok","Cada stop custa "+nf(pctDD,1)+"% do drawdown, abaixo da faixa de partida de 2% a 5% do livro: um tamanho conservador, que aguenta uma sequência longa de stops.");
+  else if(R.contratos>=1)al("ok","Cada stop custa "+nf(pctDD,1)+"% do drawdown, dentro da faixa de partida de 2% a 5% do livro.");
+  if(Number.isFinite(R.diarioRest)&&R.diarioRest<R.riscoOp)al("alto","O que ainda pode perder hoje ("+usd(R.diarioRest)+") é menor que um stop ("+usd(R.riscoOp)+"). Mais uma operação com este tamanho pode estourar o limite diário.","Na maioria das mesas, estourar o limite diário encerra o dia ou elimina a conta. Confira no regulamento.");
+  if(R.dist<=0)al("alto","O saldo já está no nível de eliminação ou abaixo dele.","");
+  else if(R.dist<R.dd*.25)al("medio","Resta só "+usd(R.dist)+" até a eliminação, menos de 25% do drawdown.","Com pouca distância, cada stop pesa mais: reduzir a mão dá mais stops de fôlego à conta.");
+  if(M.tipo==="movel"&&!(M.trava&&R.piso>=R.conta))al("info","Drawdown móvel: cada novo pico de saldo sobe o nível de eliminação junto. Lucro que volta também consome o drawdown.","Confira se a sua mesa mede o pico pelo fechamento da operação ou pelo saldo intradiário (tick a tick): o mesmo resultado pode aprovar numa mesa e eliminar em outra.");
+  if(R.consist){
+    if(!R.consist.ok)al("alto","Regra de consistência quebrada: o melhor dia ("+usd(R.melhor)+") passa de "+nf(R.consist.c*100,0)+"% do lucro total ("+usd(R.lucro)+"). Para voltar a valer, o lucro total precisa chegar a "+usd(R.consist.necessario)+".","Na prática, a meta que vale passa a ser "+usd(R.consist.metaEfetiva)+", e não "+usd(R.meta)+".");
+    if(R.consist.maxHoje!=null)al("info","Hoje, ganhar mais que "+usd(R.consist.maxHoje)+" faz este dia passar de "+nf(R.consist.c*100,0)+"% do lucro total.","Por isso um dia muito bom pode atrasar o saque: ele aumenta o lucro total que você precisa ter.");
+  }
+  $("mz-alerts").innerHTML=A.join("");
+}
+if($("view-mesa")){
+  ensureMesa();
+  Object.entries(MZ_IDS).forEach(([id,k])=>{const el=$(id);el.addEventListener(el.tagName==="SELECT"?"change":"input",()=>{S.mesa[k]=el.value;save();renderMesa();});});
+  $("mz-trava").addEventListener("change",()=>{S.mesa.trava=$("mz-trava").checked;save();renderMesa();});
+  renderMesa();
+  { const rbMesa=render; render=function(){rbMesa.apply(this,arguments);try{renderMesa();}catch(e){}}; }
+  try{const lv=new URLSearchParams(location.search).get("livro");if(lv&&/^mesas?$/i.test(lv))setTab("mesa");}catch(e){}
+}
 
 /* ---------- salvar operações ---------- */
 const SKEY="nota-trader-leitor-v1-salvas", ST={"btn":"Salvar","lista":"Salvas","tit":"Operações salvas","nome":"Nome","ph":"ex.: WIN compra rompimento","salvar":"Salvar esta","abrir":"Abrir","apagar":"Apagar","vazio":"Nada salvo ainda. Dê um nome e toque em Salvar esta.","baixar":"Baixar arquivo","carregar":"Abrir arquivo","fechar":"Fechar","ok":"Salva","okTxt":"Ficou na lista deste aparelho. Para levar para outro celular ou computador, use Baixar arquivo.","aberta":"Operação aberta","abertaTxt":"Todas as abas voltaram como estavam quando você salvou. Use Desfazer para voltar ao que estava antes.","conf":"Apagar a operação salva","subst":"Já existe uma salva com esse nome. Substituir?","imp":"Arquivo aberto","ruim":"Esse arquivo não é uma cópia da Nota do Trader.","arq":"nota-do-trader-salvas.json","loc":"pt-BR","aviso":"Fica guardado só neste navegador. Se limpar os dados do navegador, a lista some: baixe o arquivo para ter uma cópia.","compra":"Compra","venda":"Venda"};

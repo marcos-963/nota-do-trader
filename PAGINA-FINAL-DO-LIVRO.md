@@ -46,6 +46,7 @@ Use o QR do próprio livro: a calculadora abre igual, mas o Mentor já vem com o
 | Entradas Contextualizadas com Wyckoff e Elliott no WIN e WDO | marcos-963.github.io/nota-do-trader/?livro=contextualizadas | `qrcodes/qrcode-entradas-contextualizadas.png` |
 | Order Block: Entradas Matadoras (SMC) | marcos-963.github.io/nota-do-trader/?livro=orderblock | `qrcodes/qrcode-order-block.png` |
 | O Método Smart Money: Wyckoff, Elliott e SMC | marcos-963.github.io/nota-do-trader/?livro=metodo | `qrcodes/qrcode-o-metodo-smart-money.png` |
+| Guia de Sobrevivência nas Mesas Proprietárias (abre a aba Mesa proprietária) | marcos-963.github.io/nota-do-trader/?livro=mesas | `qrcodes/qrcode-mesas-proprietarias.png` |
 | Wyckoff na Prática: Resiliência | marcos-963.github.io/nota-do-trader/?livro=wyckoff | `qrcodes/qrcode-wyckoff-na-pratica.png` |
 
 Frase sugerida para a página "Ferramenta de apoio" de cada um: "O Mentor da calculadora já abre com o checklist deste livro."
