@@ -1,0 +1,900 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{color-scheme:light}body{margin:0;font:14px system-ui,-apple-system,"Segoe UI",sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Nota do Trader · Edição do Leitor</title>
+<meta name="description" content="Calculadora de apoio aos livros de Marcus Deleon: custos, impostos, margem, preço médio e cenários para WIN, WDO, Forex e ouro.">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: mesa de operação — formulário à esquerda, "nota de corretagem" à direita, assistente embaixo/ao lado */
+:root{
+  --bg:#F3F5F4; --panel:#FFFFFF; --ink:#16201D; --muted:#5D6B66; --line:#D8DFDC;
+  --accent:#0F6B5C; --accent-ink:#FFFFFF; --soft:#E6EFEC;
+  --gain:#137A3F; --loss:#B4322B; --warn:#9A6200; --warn-bg:#FFF4DD;
+  --op-bg:#E2EFEA; --op-line:#9FC7BA; --op-field:#FFFFFF;
+  --chat-bg:#FFFFFF; --chat-ink:#000000; --chat-muted:#333333; --chat-me:#DDEBE6; --chat-ai:#F5F7F6;
+  --type-bg:#EAF2FC; --type-line:#7FA7D6; --type-ink:#000000;
+  --f-display:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1513; --panel:#161F1C; --ink:#E4ECE9; --muted:#93A39D; --line:#2A3632;
+  --accent:#3FB8A1; --accent-ink:#06201B; --soft:#1C2925;
+  --gain:#4CC983; --loss:#F07A70; --warn:#E8B04F; --warn-bg:#2B2414;
+  --op-bg:#13302A; --op-line:#2F6B5D; --op-field:#0E1F1B; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1513; --panel:#161F1C; --ink:#E4ECE9; --muted:#93A39D; --line:#2A3632;
+  --accent:#3FB8A1; --accent-ink:#06201B; --soft:#1C2925;
+  --gain:#4CC983; --loss:#F07A70; --warn:#E8B04F; --warn-bg:#2B2414;
+  --op-bg:#13302A; --op-line:#2F6B5D; --op-field:#0E1F1B; color-scheme:dark}
+*{box-sizing:border-box}
+/* Operação: painel com fundo verde-claro próprio */
+#col-in{background:var(--op-bg);border-color:var(--op-line)}
+#col-in input,#col-in select,#col-in .seg button{background:var(--op-field)}
+#col-in .seg{border-color:var(--op-line)}
+#col-in label,#col-in h3{color:var(--ink)}
+/* (estilos do painel de conversa: não usados nesta edição) */
+.chat{background:var(--chat-bg);color:var(--chat-ink);border-color:var(--line);color-scheme:light}
+.chat h2{color:var(--chat-ink)}
+.chat .msg.ai{background:var(--chat-ai);color:var(--chat-ink);border-color:#D6DCDA}
+.chat .msg.me{background:var(--chat-me);color:var(--chat-ink)}
+.chat .msg.sys,.chat .disc,.chat .note{color:var(--chat-muted)}
+.chat .chip{background:#FFFFFF;color:var(--chat-ink);border-color:#C9D2CF}
+.chat .btn.ghost{color:#0F6B5C;border-color:#0F6B5C}
+.chat .btn:not(.ghost){background:#0F6B5C;border-color:#0F6B5C;color:#FFFFFF}
+.chat .att{background:#F5F7F6;border-color:#D6DCDA}
+.chat .att-txt{color:var(--chat-muted)}
+/* caixa onde você escreve */
+.chat textarea#q{background:var(--type-bg);color:var(--type-ink);border:1.5px solid var(--type-line)}
+.chat textarea#q::placeholder{color:#4A5A70}
+.chat textarea#q:focus-visible{outline:2px solid var(--type-line)}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45}
+.wrap{max-width:1240px;margin:0 auto;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:16px}
+h1{font-family:var(--f-display);font-weight:700;font-size:28px;letter-spacing:.01em;margin:0;text-wrap:balance}
+.autor{display:block;font:600 12px var(--f-display);letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:4px}
+footer.rod{margin-top:28px;border-top:1px solid var(--line);padding-top:16px;display:grid;gap:12px;font-size:13px;color:var(--muted)}
+footer.rod h2{font:700 14px var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--ink);margin:0}
+footer.rod ul{margin:0;padding-left:18px}
+footer.rod a{color:var(--accent)}
+.sub{color:var(--muted);margin:2px 0 0;max-width:62ch}
+.tabs{display:flex;gap:4px;flex-wrap:wrap}
+.tab{font:600 13px var(--f-display);letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--line);background:var(--panel);color:var(--muted);padding:8px 12px;border-radius:6px;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.tab:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.grid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:16px;align-items:start}
+
+@media (max-width:720px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px;min-width:0}
+.panel h2{font:700 15px var(--f-display);letter-spacing:.08em;text-transform:uppercase;margin:0 0 12px;color:var(--ink)}
+.panel h3{font:600 12px var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:16px 0 8px}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+.fields .full{grid-column:1/-1}
+label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);min-width:0}
+label small{color:var(--muted);opacity:.85}
+input,select,textarea{font:500 14px var(--f-mono);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px;width:100%;min-width:0}
+textarea{font-family:var(--f-body);resize:vertical}
+.seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{flex:1;font:600 13px var(--f-body);padding:8px 6px;background:var(--bg);color:var(--muted);border:0;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--soft);color:var(--ink);box-shadow:inset 0 -2px 0 var(--accent)}
+.seg.side button[data-v="C"][aria-pressed="true"]{box-shadow:inset 0 -2px 0 var(--gain)}
+.seg.side button[data-v="V"][aria-pressed="true"]{box-shadow:inset 0 -2px 0 var(--loss)}
+.hide{display:none!important}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.kpi{border:1px solid var(--line);border-radius:6px;padding:10px;background:var(--bg)}
+.kpi .k{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.kpi .v{font:600 20px var(--f-mono);font-variant-numeric:tabular-nums;margin-top:2px}
+.kpi .d{font-size:12px;color:var(--muted)}
+.gain{color:var(--gain)} .loss{color:var(--loss)}
+.nota{width:100%;border-collapse:collapse;font-size:13px}
+.nota th,.nota td{padding:6px 4px;border-bottom:1px dashed var(--line);text-align:right;white-space:nowrap}
+.nota th:first-child,.nota td:first-child{text-align:left;white-space:normal}
+.nota thead th{font:600 11px var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line)}
+.nota tr.tot td{font-weight:600;border-bottom:1px solid var(--line)}
+.nota td.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.scroll{overflow-x:auto}
+.alert{border-radius:6px;padding:8px 10px;font-size:13px;background:var(--warn-bg);color:var(--warn);margin-top:10px}
+.note{font-size:12px;color:var(--muted);margin-top:10px}
+.note li{margin-bottom:4px}
+.note ul{padding-left:18px;margin:6px 0}
+.btn{font:600 13px var(--f-body);border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);border-radius:6px;padding:8px 12px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:default}
+.ops{width:100%;border-collapse:collapse}
+.ops td{padding:4px 3px}
+.ops select,.ops input{padding:6px 8px}
+.x{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:4px 8px}
+.bar{position:relative;height:14px;border-radius:7px;background:linear-gradient(90deg,var(--soft),var(--line));margin:22px 0 26px}
+.bar .mk{position:absolute;top:-6px;width:2px;height:26px;background:var(--ink)}
+.bar .mk span{position:absolute;top:28px;left:50%;transform:translateX(-50%);font:500 11px var(--f-mono);white-space:nowrap;color:var(--ink)}
+.bar .mk.avg{background:var(--accent)} .bar .mk.avg span{top:-18px;color:var(--accent)}
+.bar .end{position:absolute;top:18px;font:500 11px var(--f-mono);color:var(--muted)}
+/* chat */
+.chat{display:flex;flex-direction:column;gap:10px}
+.log{display:flex;flex-direction:column;gap:8px;max-height:520px;overflow-y:auto;padding-right:4px}
+.msg{border-radius:8px;padding:9px 11px;white-space:pre-wrap;word-wrap:break-word;font-size:13.5px}
+.msg.me{background:var(--soft);align-self:flex-end;max-width:90%}
+.msg.ai{background:var(--bg);border:1px solid var(--line)}
+.msg.sys{font-size:12px;color:var(--muted);padding:2px 0}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:500 12px var(--f-body);border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:5px 10px;cursor:pointer;text-align:left}
+.row{display:flex;gap:8px;align-items:flex-end}
+.row textarea{flex:1}
+.btns{display:flex;flex-direction:column;gap:6px}
+.exs{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.ex{border:1px solid var(--line);border-radius:8px;padding:12px;background:var(--bg);display:flex;flex-direction:column;gap:8px;min-width:0}
+.ex h4{margin:0;font:700 15px var(--f-display);letter-spacing:.02em}
+.ex .tag{font:600 11px var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.ex p{margin:0;font-size:13px}
+.ex .mostra{color:var(--muted);font-size:12.5px}
+.ex dl{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin:0;font-size:12.5px}
+.ex dt{color:var(--muted)} .ex dd{margin:0;text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.ex .btn{margin-top:auto;align-self:flex-start}
+.fixbar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:16px}
+.fix-auto{flex-direction:row;align-items:center;gap:6px;color:var(--ink);font-size:13px}
+.fix-auto input{width:auto}
+.fix-log{flex-basis:100%;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:6px;background:var(--panel);padding:10px 12px;font-size:13px}
+.fix-log ul{margin:6px 0 0;padding-left:18px}
+.fix-log li{margin-bottom:3px}
+.fix-log .t{font:600 12px var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.inwrap{position:relative;display:block;min-width:0}
+.inwrap input{padding-right:30px}
+.clr{position:absolute;top:0;right:2px;height:100%;width:28px;border:0;background:transparent;color:var(--muted);font-size:17px;line-height:1;cursor:pointer;border-radius:4px}
+.clr:hover{color:var(--loss)}
+.panel-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.panel-head h2{margin:0}
+.btn.small{padding:5px 10px;font-size:12px}
+.btn.danger{border-color:var(--loss);color:var(--loss);background:transparent}
+.fixed{box-shadow:0 0 0 2px var(--warn)}
+.fixmsg{display:block;font-size:11.5px;line-height:1.35;color:var(--warn);margin-top:3px}
+.ops .fixmsg{max-width:220px}
+.att{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:6px;padding:6px;background:var(--bg)}
+.att img{width:72px;height:54px;object-fit:cover;border-radius:4px;max-width:100%}
+.att-txt{display:flex;align-items:center;justify-content:space-between;gap:6px;flex:1;min-width:0;font-size:12px;color:var(--muted)}
+.att-txt span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.msg img{display:block;max-width:100%;max-height:160px;border-radius:4px;margin-bottom:6px}
+.chat.drag{outline:2px dashed var(--accent);outline-offset:-4px}
+.disc{font-size:11.5px;color:var(--muted);border-top:1px solid var(--line);padding-top:8px}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <span class="autor">Ferramenta de apoio dos livros de Marcus Deleon</span>
+    <h1>Nota do Trader</h1>
+    <p class="sub">Simule uma operação antes de entrar: custos, slippage, spread, margem, imposto e dedo-duro, como sairia na nota de corretagem. Os valores de taxa são referências; confira sempre na nota da sua corretora.</p>
+  </div>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tab-op" aria-selected="true" data-tab="op">Operação</button>
+    <button class="tab" role="tab" id="tab-pm" aria-selected="false" data-tab="pm">Preço médio</button>
+    <button class="tab" role="tab" id="tab-onde" aria-selected="false" data-tab="onde">Onde está o preço</button>
+    <button class="tab" role="tab" id="tab-cen" aria-selected="false" data-tab="cen">Cenários</button>
+    <button class="tab" role="tab" id="tab-ex" aria-selected="false" data-tab="ex">Exemplos</button>
+  </div>
+</header>
+
+<div class="fixbar">
+  <button class="btn" type="button" id="fix-btn">Enviar e corrigir</button>
+  <span class="note" style="margin:0">ou aperte Enter em qualquer campo</span>
+  <button class="btn ghost small danger" type="button" data-apagar="tudo" title="Apaga todos os campos de todas as abas. Dá para desfazer.">Apagar tudo</button>
+  <button class="btn ghost hide" type="button" id="fix-undo">Desfazer</button>
+  <label class="fix-auto"><input type="checkbox" id="fix-auto"> Corrigir sozinho ao sair do campo</label>
+  <div class="fix-log hide" id="fix-log"></div>
+</div>
+
+<div class="grid">
+  <!-- COLUNA 1: entradas -->
+  <section class="panel" id="col-in">
+    <div class="panel-head"><h2>Operação</h2><button class="btn ghost small danger" type="button" data-apagar="op" title="Apaga quantidade, entrada, stop, alvo, spread e slippage. Mantém custos e capital.">Apagar operação</button></div>
+    <div class="fields">
+      <label class="full">Ativo
+        <select id="inst">
+          <option value="WDO">WDO · Mini dólar (B3)</option>
+          <option value="WIN">WIN · Mini índice (B3)</option>
+          <option value="FX">Forex · EUR/USD e pares com USD cotado</option>
+          <option value="XAU">Ouro · XAU/USD</option>
+        </select>
+      </label>
+      <div class="full" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <label>Lado<div class="seg side" id="lado"><button type="button" data-v="C">Compra</button><button type="button" data-v="V">Venda</button></div></label>
+        <label>Modalidade<div class="seg" id="modo"><button type="button" data-v="day">Day trade</button><button type="button" data-v="swing">Swing</button></div></label>
+      </div>
+      <label><span id="lb-qtd">Contratos</span><input id="qtd" inputmode="decimal"></label>
+      <label>Capital na conta (R$)<input id="capital" inputmode="decimal"></label>
+      <label>Entrada<input id="entrada" inputmode="decimal"></label>
+      <label>Stop<input id="stop" inputmode="decimal"></label>
+      <label>Alvo<input id="alvo" inputmode="decimal"></label>
+      <label>Risco por trade (% do capital)<input id="riscoPct" inputmode="decimal"></label>
+    </div>
+
+    <h3>Execução</h3>
+    <div class="fields">
+      <label><span>Spread <small class="u-px">(pts)</small></span><input id="spread" inputmode="decimal"></label>
+      <label><span>Slippage por lado <small class="u-px">(pts)</small></span><input id="slip" inputmode="decimal"></label>
+    </div>
+
+    <div class="b3">
+      <h3>Custos B3 (por contrato, por lado)</h3>
+      <div class="fields">
+        <label>Corretagem (R$)<input id="corret" inputmode="decimal"></label>
+        <label>Emolumentos + registro (R$)<input id="emol" inputmode="decimal"></label>
+        <label>Margem por contrato (R$)<input id="margem" inputmode="decimal"></label>
+        <label>Dias carregando (swing)<input id="dias" inputmode="decimal"></label>
+      </div>
+    </div>
+
+    <div class="fx">
+      <h3>Custos Forex</h3>
+      <div class="fields">
+        <label>Comissão (US$ por lote, ida e volta)<input id="comissao" inputmode="decimal"></label>
+        <label>Alavancagem (1:x)<input id="alav" inputmode="decimal"></label>
+        <label>Swap (US$ por lote por noite, negativo = paga)<input id="swap" inputmode="decimal"></label>
+        <label>Noites carregando<input id="noites" inputmode="decimal"></label>
+        <label>Tamanho do contrato (1 lote)<input id="contrato" inputmode="decimal"></label>
+        <label>Tamanho do pip (no preço)<input id="pip" inputmode="decimal"></label>
+        <label class="full">Dólar (USD/BRL) para converter<input id="usdbrl" inputmode="decimal"></label>
+      </div>
+    </div>
+    <p class="note">Números com vírgula ou ponto: <span class="num">5480,5</span> ou <span class="num">1.0850</span>. Os valores iniciais são exemplos.</p>
+  </section>
+
+  <!-- COLUNA 2: resultados -->
+  <section class="panel" id="col-out">
+    <div id="view-op">
+      <h2>Resultado</h2>
+      <div class="kpis">
+        <div class="kpi"><div class="k">Se bater o stop</div><div class="v" id="k-stop">–</div><div class="d" id="k-stop-d"></div></div>
+        <div class="kpi"><div class="k">Se bater o alvo (líquido)</div><div class="v" id="k-alvo">–</div><div class="d" id="k-alvo-d"></div></div>
+        <div class="kpi"><div class="k">Risco : retorno</div><div class="v" id="k-rr">–</div><div class="d">líquido de custos</div></div>
+        <div class="kpi"><div class="k">Empate (break-even)</div><div class="v" id="k-be">–</div><div class="d" id="k-be-d"></div></div>
+      </div>
+      <div class="scroll">
+      <table class="nota">
+        <thead><tr><th>Nota simulada</th><th>No stop</th><th>No alvo</th></tr></thead>
+        <tbody id="nota"></tbody>
+      </table>
+      </div>
+      <h3>Capital, margem e alavancagem</h3>
+      <div class="scroll"><table class="nota"><tbody id="cap"></tbody></table></div>
+      <div id="alerts"></div>
+      <div class="note" id="tax-note"></div>
+    </div>
+
+    <div id="view-pm" class="hide">
+      <div class="panel-head"><h2>Montar posição e preço médio</h2><button class="btn ghost small danger" type="button" data-apagar="pm">Apagar ordens</button></div>
+      <p class="note" style="margin-top:0">Cada linha é uma ordem executada, na ordem em que aconteceu. Ordens no mesmo sentido aumentam a posição e mudam o preço médio; no sentido contrário, realizam lucro ou prejuízo sobre o preço médio. Usa o ativo e os custos da aba Operação.</p>
+      <div class="scroll">
+      <table class="ops"><tbody id="ops"></tbody></table>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px">
+        <button class="btn ghost" type="button" id="add-op">Adicionar ordem</button>
+      </div>
+      <div class="fields"><label class="full">Preço atual<input id="pmAtual" inputmode="decimal"></label></div>
+      <div class="scroll" style="margin-top:12px"><table class="nota"><tbody id="pm-out"></tbody></table></div>
+      <div class="note" id="pm-note"></div>
+    </div>
+
+    <div id="view-onde" class="hide">
+      <div class="panel-head"><h2>Onde está o preço</h2><button class="btn ghost small danger" type="button" data-apagar="onde">Apagar</button></div>
+      <p class="note" style="margin-top:0">Mostra a posição do preço em relação a referências que você informa. É descrição, não previsão: preço perto da máxima não quer dizer que vai cair, nem perto da mínima que vai subir.</p>
+      <div class="fields">
+        <label>Máxima do período<input id="oMax" inputmode="decimal"></label>
+        <label>Mínima do período<input id="oMin" inputmode="decimal"></label>
+        <label>Preço atual<input id="oAtual" inputmode="decimal"></label>
+        <label>Média de referência <small>(VWAP, média móvel…)</small><input id="oMedia" inputmode="decimal"></label>
+        <label class="full">ATR / amplitude média diária <small>(opcional)</small><input id="oAtr" inputmode="decimal"></label>
+      </div>
+      <div class="bar" id="o-bar"></div>
+      <div class="scroll"><table class="nota"><tbody id="o-out"></tbody></table></div>
+      <div id="o-alert"></div>
+    </div>
+
+    <div id="view-ex" class="hide">
+      <div class="panel-head"><h2>Exemplos</h2></div>
+      <p class="note" style="margin-top:0">Uma operação completa para cada ativo, com todas as abas preenchidas: operação, preço médio, onde está o preço e cenários. Os preços são fictícios. Carregar um exemplo substitui o que está na tela; o botão Desfazer traz de volta.</p>
+      <div class="exs" id="exs"></div>
+    </div>
+
+    <div id="view-cen" class="hide">
+      <div class="panel-head"><h2>Cenários</h2><button class="btn ghost small danger" type="button" data-apagar="cen">Apagar</button></div>
+      <p class="note" style="margin-top:0">Gera todas as combinações de stop, alvo e quantidade com o ativo, a entrada e os custos da aba Operação. O alvo é escrito como múltiplo do stop: 2 quer dizer alvo com o dobro de pontos do stop.</p>
+      <div class="fields">
+        <label>Stop de <small class="u-px">(pts)</small><input id="cenStopDe" inputmode="decimal"></label>
+        <label>Stop até <small class="u-px">(pts)</small><input id="cenStopAte" inputmode="decimal"></label>
+        <label>Passo <small class="u-px">(pts)</small><input id="cenStopPasso" inputmode="decimal"></label>
+        <label>Quantidades <small>(separe com ;)</small><input id="cenQtds"></label>
+        <label class="full">Alvos em múltiplos do stop <small>(separe com ;)</small><input id="cenAlvos"></label>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:12px 0 8px">
+        <label style="flex-direction:row;align-items:center;gap:6px;color:var(--ink)"><input type="checkbox" id="cenSoRisco" style="width:auto"> Só o que cabe no risco por trade</label>
+        <button class="btn ghost" type="button" id="cenCopiar">Copiar tabela (para planilha)</button>
+      </div>
+      <p class="note" id="cen-resumo" style="margin:0 0 8px"></p>
+      <div class="scroll" style="max-height:560px;overflow-y:auto"><table class="nota" id="cen-tab"></table></div>
+      <textarea id="cen-csv" class="hide" rows="4" aria-label="Tabela em texto para copiar"></textarea>
+    </div>
+  </section>
+
+</div>
+
+<footer class="rod">
+  <h2>Os livros</h2>
+  <ul>
+    <li><a href="https://www.amazon.com.br/s?k=Entradas+Contextualizadas+com+Wyckoff+e+Elliott+no+WIN+e+WDO+Marcus+Deleon" target="_blank" rel="noopener">Entradas Contextualizadas com Wyckoff e Elliott no WIN e WDO</a></li>
+    <li><a href="https://www.amazon.com.br/s?k=Flow+%26+Order+Leitura+Institucional+do+Mercado+Marcus+Deleon" target="_blank" rel="noopener">Flow &amp; Order: Leitura Institucional do Mercado</a></li>
+    <li><a href="https://www.amazon.com.br/s?k=O+M%C3%A9todo+Smart+Money+Wyckoff+Elliott+SMC+Marcus+Deleon" target="_blank" rel="noopener">O Método Smart Money: Wyckoff, Elliott e SMC</a></li>
+  </ul>
+  <p style="margin:0">Ferramenta educativa. Não é recomendação de investimento, não indica compra ou venda de nenhum ativo e não substitui orientação de profissional credenciado. Operar alavancado pode causar perdas maiores que o capital. Taxas, margens e regras de imposto mudam e variam por corretora: confira sempre na sua nota de corretagem e com um contador. Os dados ficam só no seu navegador; nada é enviado.</p>
+</footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+
+const PRESETS={
+  WDO:{qtd:"1",entrada:"5480",stop:"5470",alvo:"5500",spread:"0,5",slip:"0,5",corret:"0",emol:"1,10",margem:"150",dias:"0"},
+  WIN:{qtd:"1",entrada:"130000",stop:"129800",alvo:"130400",spread:"5",slip:"5",corret:"0",emol:"0,30",margem:"100",dias:"0"},
+  FX:{qtd:"0,01",entrada:"1.0850",stop:"1.0830",alvo:"1.0890",spread:"1",slip:"0,2",comissao:"7",alav:"100",swap:"-6",noites:"0",contrato:"100000",pip:"0.0001"},
+  XAU:{qtd:"0,01",entrada:"4000",stop:"3990",alvo:"4020",spread:"3",slip:"2",comissao:"7",alav:"100",swap:"-30",noites:"0",contrato:"100",pip:"0.1"}
+};
+const CEN={
+  WDO:{stopDe:"3",stopAte:"30",stopPasso:"1",alvos:"1; 1,5; 2; 3",qtds:"1; 2; 3"},
+  WIN:{stopDe:"50",stopAte:"500",stopPasso:"25",alvos:"1; 1,5; 2; 3",qtds:"1; 2; 5"},
+  FX:{stopDe:"5",stopAte:"60",stopPasso:"5",alvos:"1; 1,5; 2; 3",qtds:"0,01; 0,05; 0,1"},
+  XAU:{stopDe:"20",stopAte:"300",stopPasso:"20",alvos:"1; 1,5; 2; 3",qtds:"0,01; 0,02; 0,05"}
+};
+/* exemplos completos, um por ativo — números fictícios, só para mostrar como a calculadora funciona */
+const EXEMPLOS=[
+  {id:"win",titulo:"WIN · venda no day trade",
+   resumo:"Venda de 1 contrato a 170.225, stop 225 pontos acima e alvo 525 pontos abaixo. Posição montada em 2 ordens e preço comparado à VWAP do dia.",
+   mostra:"Dedo-duro de 1% e DARF de day trade, preço médio de uma venda feita em duas partes e quantos contratos cabem em 2% de risco.",
+   s:{inst:"WIN",lado:"V",modo:"day",qtd:"1",entrada:"170225",stop:"170450",alvo:"169700",spread:"5",slip:"5",corret:"0",emol:"0,30",margem:"120",dias:"0",capital:"3000",riscoPct:"2",
+      ops:[{lado:"V",qtd:"1",preco:"170225"},{lado:"V",qtd:"1",preco:"170300"}],pmAtual:"170100",
+      oMax:"170990",oMin:"167575",oAtual:"170225",oMedia:"169850",oAtr:"1800",
+      cen:{stopDe:"100",stopAte:"600",stopPasso:"50",alvos:"1; 1,5; 2; 3",qtds:"1; 2; 3"}}},
+  {id:"wdo",titulo:"WDO · compra no day trade",
+   resumo:"Compra de 1 contrato a 5.480,0, stop 8 pontos abaixo e alvo 16 pontos acima. Uma segunda compra a 5.474,0 baixa o preço médio.",
+   mostra:"Quanto vale cada ponto do mini dólar (R$ 10), o peso dos emolumentos num alvo curto e como o preço médio muda ao aumentar a mão.",
+   s:{inst:"WDO",lado:"C",modo:"day",qtd:"1",entrada:"5480",stop:"5472",alvo:"5496",spread:"0,5",slip:"0,5",corret:"0",emol:"1,10",margem:"150",dias:"0",capital:"5000",riscoPct:"2",
+      ops:[{lado:"C",qtd:"1",preco:"5480"},{lado:"C",qtd:"1",preco:"5474"}],pmAtual:"5478",
+      oMax:"5502",oMin:"5461",oAtual:"5480",oMedia:"5484",oAtr:"38",
+      cen:{stopDe:"3",stopAte:"20",stopPasso:"1",alvos:"1; 1,5; 2; 3",qtds:"1; 2"}}},
+  {id:"fx",titulo:"Forex EUR/USD · compra em swing",
+   resumo:"Compra de 0,03 lote a 1,0850, stop 25 pips abaixo e alvo 50 pips acima, carregando 2 noites.",
+   mostra:"Valor do pip em reais, custo de swap por noite, comissão por lote, margem com alavancagem 1:100 e imposto anual de 15% (sem dedo-duro).",
+   s:{inst:"FX",lado:"C",modo:"swing",qtd:"0,03",entrada:"1,085",stop:"1,0825",alvo:"1,09",spread:"1",slip:"0,2",comissao:"7",alav:"100",swap:"-6",noites:"2",contrato:"100000",pip:"0,0001",usdbrl:"5,48",capital:"3000",riscoPct:"2",
+      ops:[{lado:"C",qtd:"0,02",preco:"1,085"},{lado:"C",qtd:"0,01",preco:"1,0838"}],pmAtual:"1,0858",
+      oMax:"1,0892",oMin:"1,0811",oAtual:"1,085",oMedia:"1,0856",oAtr:"0,0065",
+      cen:{stopDe:"10",stopAte:"60",stopPasso:"5",alvos:"1; 1,5; 2; 3",qtds:"0,01; 0,03; 0,05"}}},
+  {id:"xau",titulo:"Ouro XAU/USD · venda no day trade",
+   resumo:"Venda de 0,01 lote (1 onça) a 4.000,00, stop US$ 12 acima e alvo US$ 24 abaixo.",
+   mostra:"Tamanho do contrato do ouro (100 onças por lote), spread e slippage maiores que no câmbio e quanto US$ 1 de movimento vale em reais.",
+   s:{inst:"XAU",lado:"V",modo:"day",qtd:"0,01",entrada:"4000",stop:"4012",alvo:"3976",spread:"3",slip:"2",comissao:"7",alav:"100",swap:"-30",noites:"0",contrato:"100",pip:"0,1",usdbrl:"5,48",capital:"5000",riscoPct:"2",
+      ops:[{lado:"V",qtd:"0,01",preco:"4000"},{lado:"V",qtd:"0,01",preco:"4008"}],pmAtual:"3995",
+      oMax:"4035",oMin:"3968",oAtual:"4000",oMedia:"3994",oAtr:"45",
+      cen:{stopDe:"50",stopAte:"300",stopPasso:"25",alvos:"1; 1,5; 2; 3",qtds:"0,01; 0,02"}}}
+];
+const INFO={
+  WDO:{nome:"WDO (mini dólar)",dec:1,un:"pts",mult:()=>10,b3:true},
+  WIN:{nome:"WIN (mini índice)",dec:0,un:"pts",mult:()=>0.2,b3:true},
+  FX:{nome:"Forex",dec:5,un:"pips",b3:false},
+  XAU:{nome:"Ouro XAU/USD",dec:2,un:"pips",b3:false}
+};
+const TEXT_IDS=["qtd","capital","entrada","stop","alvo","riscoPct","spread","slip","corret","emol","margem","dias","comissao","alav","swap","noites","contrato","pip","usdbrl","pmAtual","oMax","oMin","oAtual","oMedia","oAtr"];
+
+let S={inst:"WDO",lado:"C",modo:"day",capital:"500",riscoPct:"2",usdbrl:"5,48",
+  ...PRESETS.WDO,...PRESETS.FX,...PRESETS.WDO,
+  ops:[{lado:"C",qtd:"1",preco:"5480"},{lado:"C",qtd:"1",preco:"5470"}],
+  pmAtual:"5476",oMax:"5512",oMin:"5461",oAtual:"5480",oMedia:"5488",oAtr:"45",tab:"op"};
+try{const saved=JSON.parse(localStorage.getItem("nota-trader-leitor-v1")||"null");if(saved&&typeof saved==="object")S={...S,...saved};}catch(e){}
+if(!S.cen||typeof S.cen!=="object")S.cen={...(CEN[S.inst]||CEN.WDO)};
+
+function num(v){
+  if(typeof v==="number")return v;
+  let s=String(v??"").trim().replace(/\s/g,"").replace(/R\$/i,"");
+  if(!s)return NaN;
+  if(s.includes(","))s=s.replace(/\./g,"").replace(",",".");
+  const n=Number(s);return Number.isFinite(n)?n:NaN;
+}
+const brlF=new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"});
+const brl=n=>Number.isFinite(n)?brlF.format(n):"–";
+const nf=(n,d=2)=>Number.isFinite(n)?n.toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d}):"–";
+const sgnCls=n=>n>0?"gain":n<0?"loss":"";
+function save(){try{localStorage.setItem("nota-trader-leitor-v1",JSON.stringify(S));}catch(e){}}
+
+/* troca de ativo: zera tudo que pertence ao ativo anterior */
+function applyPreset(inst){
+  S.inst=inst;Object.assign(S,PRESETS[inst]);
+  S.ops=[{lado:S.lado,qtd:PRESETS[inst].qtd,preco:PRESETS[inst].entrada}];
+  S.pmAtual=PRESETS[inst].entrada;
+  S.oMax="";S.oMin="";S.oMedia="";S.oAtr="";S.oAtual=PRESETS[inst].entrada;
+  S.cen={...CEN[inst],soRisco:!!(S.cen&&S.cen.soRisco)};
+}
+const ONDE_KEYS=["oMax","oMin","oAtual","oMedia","oAtr"];
+
+/* ---------- corretor automático ----------
+   nivel "leve": formato, escala (ponto de milhar), tick, quantidade, sinais, vazios
+   nivel "completo": também lado do stop/alvo, máxima/mínima trocadas, média/ATR de outro print */
+const TICK={WDO:.5,WIN:5,FX:.00001,XAU:.01};
+function corrigir(nivel){
+  const I=INFO[S.inst], P=PRESETS[S.inst], log=[], dec=S.inst==="FX"?5:S.inst==="XAU"?2:S.inst==="WDO"?1:0;
+  const fmt=v=>String(Math.round(v*1e6)/1e6).replace(".",",");
+  const campos={}; log.campos=campos;
+  const note=(k,msg)=>{log.push(msg);campos[k]=campos[k]?campos[k]+" "+msg:msg;};
+  const put=(k,v,msg)=>{const novo=fmt(v);if(String(S[k])!==novo){S[k]=novo;if(msg)note(k,msg);}};
+  const tick=TICK[S.inst];
+  const roundTick=v=>Math.round(Math.round(v/tick)*tick*1e6)/1e6;
+  const NOMES={entrada:"Entrada",stop:"Stop",alvo:"Alvo",pmAtual:"Preço atual (preço médio)",oMax:"Máxima",oMin:"Mínima",oAtual:"Preço atual",oMedia:"Média",qtd:"Quantidade",capital:"Capital",
+    riscoPct:"Risco por trade",spread:"Spread",slip:"Slippage",corret:"Corretagem",emol:"Emolumentos",margem:"Margem",dias:"Dias",comissao:"Comissão",alav:"Alavancagem",noites:"Noites",usdbrl:"Dólar"};
+  // 1) campos de preço: escala pela mediana
+  const precoKeys=["entrada","stop","alvo","pmAtual","oMax","oMin","oAtual","oMedia"];
+  const vals=[...precoKeys.map(k=>num(S[k])),...S.ops.map(o=>num(o.preco))].filter(v=>Number.isFinite(v)&&v>0).sort((a,b)=>a-b);
+  let ref=vals.length?vals[Math.floor(vals.length/2)]:num(P.entrada);
+  const escala=v=>{
+    if(!Number.isFinite(v)||v<=0||!(ref>0))return v;
+    if(Math.abs(v/ref-1)<=.5)return v;
+    for(let k=-6;k<=6;k++){const t=v*Math.pow(10,k);if(Math.abs(t/ref-1)<=.3)return t;}
+    return v;
+  };
+  const fixPreco=(k,obrig)=>{
+    const raw=S[k], v=num(raw);
+    if(!Number.isFinite(v)){ if(obrig){put(k,num(P[k])||ref,NOMES[k]+": estava vazio ou inválido, preenchido com o exemplo "+fmt(num(P[k])||ref)+".");} return; }
+    let n=Math.abs(v), msg=null;
+    if(v<0)msg=NOMES[k]+": preço negativo, sinal removido.";
+    const e=escala(n);
+    if(e!==n){msg=NOMES[k]+": \""+raw+"\" seria lido como "+fmt(n)+" (ponto no lugar de milhar ou vírgula no lugar errado). Ajustado para "+fmt(e)+".";n=e;}
+    if(k==="oMedia"){put(k,n,msg);return;}   /* média (VWAP, móvel) não precisa cair no tick */
+    const r=roundTick(n);
+    if(Math.abs(r-n)>1e-9&&!msg)msg=NOMES[k]+": "+fmt(n)+" arredondado para "+fmt(r)+" (em "+I.nome+" o preço anda de "+fmt(tick)+" em "+fmt(tick)+").";
+    put(k,r,msg);
+  };
+  ["entrada","stop","alvo"].forEach(k=>fixPreco(k,nivel==="completo"));   /* vazio só é preenchido ao enviar, nunca ao sair do campo */
+  ["pmAtual","oMax","oMin","oAtual","oMedia"].forEach(k=>fixPreco(k,false));
+  S.ops.forEach((o,i)=>{const v=num(o.preco);if(!Number.isFinite(v))return;let n=escala(Math.abs(v));n=roundTick(n);const novo=fmt(n);
+    if(String(o.preco)!==novo){if(Math.abs(n-v)>tick)note("op-preco-"+i,"Ordem "+(i+1)+": preço \""+o.preco+"\" seria lido como "+fmt(v)+". Ajustado para "+novo+".");o.preco=novo;}
+    let q=Math.abs(num(o.qtd));if(!Number.isFinite(q)||q===0)q=I.b3?1:.01;q=I.b3?Math.max(1,Math.round(q)):Math.max(.01,Math.round(q*100)/100);
+    const nq=fmt(q);if(String(o.qtd)!==nq){note("op-qtd-"+i,"Ordem "+(i+1)+": quantidade "+(o.qtd||"vazia")+" virou "+nf(q,I.b3?0:2)+".");o.qtd=nq;}});
+  // 2) quantidade
+  if(nivel==="completo"||Number.isFinite(num(S.qtd))){ let q=num(S.qtd); const raw=S.qtd;
+    if(!Number.isFinite(q)||q===0)q=num(P.qtd);
+    q=Math.abs(q);
+    const nq=I.b3?Math.max(1,Math.round(q)):Math.max(.01,Math.round(q*100)/100);
+    if(fmt(nq)!==String(S.qtd))put("qtd",nq,"Quantidade: "+(raw||"vazia")+" virou "+nf(nq,I.b3?0:2)+(I.b3?" (mini só aceita contrato inteiro).":" (lote mínimo 0,01, de 0,01 em 0,01)."));}
+  // 3) números simples: vazio vira exemplo, negativo vira positivo
+  const simples=I.b3?["spread","slip","corret","emol","margem","dias"]:["spread","slip","comissao","alav","noites"];
+  simples.concat(["capital","riscoPct"]).forEach(k=>{
+    const v=num(S[k]), def=k==="capital"?1000:k==="riscoPct"?2:num(P[k]);
+    if(!Number.isFinite(v)){if(nivel==="completo")put(k,def,NOMES[k]+": estava vazio, preenchido com "+fmt(def)+(k==="capital"||k==="riscoPct"?" (exemplo, troque pelo seu).":" (valor de exemplo)."));}
+    else if(v<0)put(k,-v,NOMES[k]+": não pode ser negativo, sinal removido.");
+  });
+  if(I.b3&&num(S.dias)%1)put("dias",Math.round(num(S.dias)),"Dias: arredondado para número inteiro.");
+  { const r=num(S.riscoPct); if(r>20&&r<=100)note("riscoPct","Risco por trade de "+nf(r,1)+"% parece alto demais. Confira se não queria dizer "+nf(r/100,2)+"% ou "+nf(r/10,1)+"%."); if(r>100)put("riscoPct",2,"Risco por trade acima de 100% não existe. Voltou para 2% (troque pelo seu)."); }
+  if(!I.b3){
+    const u=num(S.usdbrl);
+    if(!Number.isFinite(u)||u<=0){if(nivel==="completo")put("usdbrl",5.5,"Dólar: estava vazio, preenchido com 5,50 (confira a cotação do dia).");}
+    else if(u>20||u<1){let t=u;for(let k=-4;k<=4;k++){const c=u*Math.pow(10,k);if(c>=3&&c<=9){t=c;break;}}if(t!==u)put("usdbrl",t,"Dólar: "+S.usdbrl+" fora de escala, ajustado para "+nf(t,2)+".");}
+    const c=num(S.contrato), pp=num(S.pip);
+    if(nivel==="completo"&&c!==num(P.contrato))put("contrato",num(P.contrato),"Tamanho do contrato: "+(S.contrato||"vazio")+" não é o padrão de "+I.nome+". Voltou para "+P.contrato+" (confira na sua corretora).");
+    if(nivel==="completo"&&pp!==num(P.pip))put("pip",num(P.pip),"Tamanho do pip: "+(S.pip||"vazio")+" não é o padrão de "+I.nome+". Voltou para "+P.pip+".");
+    const sw=num(S.swap);if(!Number.isFinite(sw)&&nivel==="completo")put("swap",num(P.swap),"Swap: estava vazio, preenchido com exemplo "+P.swap+".");
+    const al=num(S.alav);if(al>0&&al<1)put("alav",1/al,"Alavancagem: escrita como fração, convertida para 1:"+nf(1/al,0)+".");
+  }
+  if(nivel==="completo"){
+    // 4) lado do stop e do alvo
+    const e=num(S.entrada), st=num(S.stop), av=num(S.alvo), d=S.lado==="C"?1:-1;
+    const stopErrado=(st-e)*d>0, alvoErrado=(av-e)*d<0;
+    if(stopErrado&&alvoErrado){S.lado=S.lado==="C"?"V":"C";note("lado","Stop e alvo estavam do lado contrário: a operação é uma "+(S.lado==="C"?"compra":"venda")+". Lado trocado.");}
+    else{
+      if(stopErrado)put("stop",roundTick(e-(st-e)),"Stop estava do lado errado para uma "+(S.lado==="C"?"compra":"venda")+". Espelhado para "+nf(roundTick(e-(st-e)),dec)+" (mesma distância).");
+      if(alvoErrado)put("alvo",roundTick(e-(av-e)),"Alvo estava do lado errado para uma "+(S.lado==="C"?"compra":"venda")+". Espelhado para "+nf(roundTick(e-(av-e)),dec)+" (mesma distância).");
+    }
+    if(num(S.stop)===e)note("stop","Stop igual à entrada: não tem risco definido. Coloque a distância do seu stop.");
+    if(num(S.alvo)===e)note("alvo","Alvo igual à entrada: não tem ganho possível. Coloque a distância do seu alvo.");
+    // 5) aba Onde está o preço
+    let mx=num(S.oMax),mn=num(S.oMin);
+    if(mx<mn){const t=S.oMax;S.oMax=S.oMin;S.oMin=t;note("oMax","Máxima e mínima estavam trocadas.");mx=num(S.oMax);mn=num(S.oMin);}
+    const rng=mx-mn, md=num(S.oMedia), atr=num(S.oAtr);
+    if(rng>0&&Number.isFinite(md)&&Math.abs(md-(mx+mn)/2)>rng*5){S.oMedia="";note("oMedia","Média "+nf(md,dec)+" era de outro ativo ou print. Campo apagado: preencha com a média do mesmo gráfico.");}
+    if(rng>0&&Number.isFinite(atr)&&(atr>rng*10||atr<rng/30)){S.oAtr="";note("oAtr","ATR "+nf(atr,dec)+" não combina com esta faixa de preço. Campo apagado.");}
+    const at=num(S.oAtual);if(rng>0&&Number.isFinite(at)&&(at>mx||at<mn))note("oAtual","Preço atual fora da faixa máxima–mínima. Confira se são do mesmo período.");
+    // 6) cenários
+    const c=S.cen;if(c){const de=num(c.stopDe),ate=num(c.stopAte),ps=num(c.stopPasso);
+      if(de>ate){const t=c.stopDe;c.stopDe=c.stopAte;c.stopAte=t;note("cenStopDe","Cenários: stop de/até estavam invertidos.");}
+      if(!(ps>0)){c.stopPasso=CEN[S.inst].stopPasso;note("cenStopPasso","Cenários: passo vazio ou zero, voltou para "+c.stopPasso+".");}}
+  }
+  return log;
+}
+
+/* ---------- cálculo principal ---------- */
+function calc(o){return calcWith(Object.assign({},S,o||{}));}
+function calcWith(S){
+  const I=INFO[S.inst], b3=I.b3;
+  const qtd=num(S.qtd), ent=num(S.entrada), stp=num(S.stop), alv=num(S.alvo);
+  const dir=S.lado==="C"?1:-1, usd=num(S.usdbrl), capital=num(S.capital);
+  const contrato=num(S.contrato), pip=num(S.pip);
+  const m=b3?I.mult():contrato*usd;            // R$ por 1,0 de preço por contrato/lote
+  const unit=b3?1:pip;                           // spread/slippage informados em pts (B3) ou pips (FX)
+  const spreadU=num(S.spread)*unit, slipU=num(S.slip)*unit;
+  const dStop=(stp-ent)*dir, dAlvo=(alv-ent)*dir;
+  const brutoStop=dStop*m*qtd, brutoAlvo=dAlvo*m*qtd;
+  const custoSpread=spreadU*m*qtd;
+  const slipStop=2*slipU*m*qtd, slipAlvo=slipU*m*qtd;   // stop: entrada a mercado + saída a mercado; alvo: só a entrada
+  let fixos=0, swapCusto=0, linhas=[];
+  if(b3){
+    const corr=num(S.corret)*2*qtd, emo=num(S.emol)*2*qtd;
+    fixos=corr+emo;
+    linhas.push(["Corretagem (entrada + saída)",corr,corr]);
+    linhas.push(["Emolumentos + registro B3",emo,emo]);
+  }else{
+    const com=num(S.comissao)*qtd*usd;
+    fixos=com;
+    linhas.push(["Comissão da corretora",com,com]);
+    if(S.modo==="swing"){swapCusto=-num(S.swap)*num(S.noites)*qtd*usd;linhas.push(["Swap ("+nf(num(S.noites),0)+" noites)",swapCusto,swapCusto]);}
+  }
+  const custoStop=fixos+swapCusto+custoSpread+slipStop, custoAlvo=fixos+swapCusto+custoSpread+slipAlvo;
+  const liqStop=brutoStop-custoStop, liqAlvo=brutoAlvo-custoAlvo;
+  // impostos
+  let aliq, irrfAliq, irrfNome;
+  if(b3){ if(S.modo==="day"){aliq=.20;irrfAliq=.01;irrfNome="Dedo-duro (IRRF 1% s/ lucro do day trade)";} else {aliq=.15;irrfAliq=.00005;irrfNome="Dedo-duro (IRRF 0,005%, simplificado)";} }
+  else {aliq=.15;irrfAliq=0;irrfNome="Dedo-duro (não há no exterior)";}
+  const tax=l=>{const ir=l>0?l*aliq:0, irrf=l>0?l*irrfAliq:0;return{ir,irrf,darf:ir-irrf,final:l-ir};};
+  const tS=tax(liqStop), tA=tax(liqAlvo);
+  // break-even
+  const custosBE=fixos+swapCusto+custoSpread+slipAlvo;
+  const beMove=custosBE/(m*qtd), bePrice=ent+dir*beMove;
+  // capital
+  const nocional=ent*m*qtd;
+  const margemUsada=b3?num(S.margem)*qtd:nocional/num(S.alav);
+  const perdaAbs=Math.abs(Math.min(liqStop,0));
+  const perdaPor1=perdaAbs/qtd;
+  const riscoMax=capital*num(S.riscoPct)/100;
+  let qtdMax=perdaPor1>0?riscoMax/perdaPor1:NaN;
+  qtdMax=b3?Math.floor(qtdMax):Math.floor(qtdMax*100)/100;
+  const R={inst:S.inst,nomeAtivo:I.nome,b3,lado:S.lado==="C"?"compra":"venda",modo:S.modo==="day"?"day trade":"swing trade",
+    qtd,entrada:ent,stop:stp,alvo:alv,reaisPorPontoPorContrato:m,unidade:I.un,
+    pontosAteStop:dStop/unit,pontosAteAlvo:dAlvo/unit,
+    brutoStop,brutoAlvo,custoSpread,slippageStop:slipStop,slippageAlvo:slipAlvo,custosFixos:fixos,swap:swapCusto,
+    custoTotalStop:custoStop,custoTotalAlvo:custoAlvo,liquidoStop:liqStop,liquidoAlvo:liqAlvo,
+    impostoAliquota:aliq,irNoAlvo:tA.ir,dedoDuroNoAlvo:tA.irrf,darfNoAlvo:tA.darf,finalAposImpostoAlvo:tA.final,
+    breakEvenPreco:bePrice,breakEvenMovimento:beMove/unit,
+    riscoRetorno:perdaAbs>0?liqAlvo/perdaAbs:NaN,
+    capital,percCapitalNoStop:capital>0?perdaAbs/capital*100:NaN,stopsAteZerar:perdaAbs>0?Math.floor(capital/perdaAbs):NaN,
+    stopsAteMetade:perdaAbs>0?Math.floor(capital*.5/perdaAbs):NaN,
+    riscoPctEscolhido:num(S.riscoPct),qtdMaxPeloRisco:qtdMax,
+    valorNocional:nocional,margemUsada,margemLivre:capital-margemUsada,alavancagemEfetiva:capital>0?nocional/capital:NaN,
+    usdbrl:usd,linhasCusto:linhas,irrfNome,tS,tA};
+  return R;
+}
+
+function render(){
+  const R=calc(), I=INFO[S.inst];
+  document.querySelectorAll(".b3").forEach(e=>e.classList.toggle("hide",!R.b3));
+  document.querySelectorAll(".fx").forEach(e=>e.classList.toggle("hide",R.b3));
+  document.querySelectorAll(".u-px").forEach(e=>e.textContent="("+I.un+")");
+  $("lb-qtd").textContent=R.b3?"Contratos":"Lotes";
+  const ud=R.b3?(S.inst==="WDO"?1:0):1;
+  $("k-stop").textContent=brl(R.liquidoStop);$("k-stop").className="v "+sgnCls(R.liquidoStop);
+  $("k-stop-d").textContent=nf(R.pontosAteStop,ud)+" "+I.un+" · "+nf(R.percCapitalNoStop,1)+"% do capital";
+  $("k-alvo").textContent=brl(R.liquidoAlvo);$("k-alvo").className="v "+sgnCls(R.liquidoAlvo);
+  $("k-alvo-d").textContent="+"+nf(R.pontosAteAlvo,ud)+" "+I.un+" · após IR: "+brl(R.finalAposImpostoAlvo);
+  $("k-rr").textContent=Number.isFinite(R.riscoRetorno)?"1 : "+nf(R.riscoRetorno,2):"–";
+  $("k-be").textContent=nf(R.breakEvenPreco,I.dec);
+  $("k-be-d").textContent="precisa andar "+nf(R.breakEvenMovimento,ud===0?1:2)+" "+I.un+" só para pagar custos";
+  const row=(l,a,b,cls)=>`<tr${cls?` class="${cls}"`:""}><td>${l}</td><td class="n ${sgnCls(a)}">${brl(a)}</td><td class="n ${sgnCls(b)}">${brl(b)}</td></tr>`;
+  let h=row("Resultado bruto ("+I.un+" × "+brl(R.reaisPorPontoPorContrato).replace("R$","R$ ")+" × "+nf(R.qtd,R.b3?0:2)+")",R.brutoStop,R.brutoAlvo);
+  R.linhasCusto.forEach(([l,a,b])=>{h+=row(l,-a,-b);});
+  h+=row("Spread ("+nf(num(S.spread),2)+" "+I.un+")",-R.custoSpread,-R.custoSpread);
+  h+=row("Slippage (stop: entrada + saída · alvo: só entrada)",-R.slippageStop,-R.slippageAlvo);
+  h+=row("Líquido antes do imposto",R.liquidoStop,R.liquidoAlvo,"tot");
+  h+=row("IR devido ("+nf(R.impostoAliquota*100,0)+"%)",-R.tS.ir,-R.tA.ir);
+  h+=`<tr><td>${R.irrfNome}</td><td class="n">${brl(R.tS.irrf)}</td><td class="n">${brl(R.tA.irrf)}</td></tr>`;
+  if(R.b3)h+=`<tr><td>DARF a pagar no mês (IR − dedo-duro)</td><td class="n">${brl(R.tS.darf)}</td><td class="n">${brl(R.tA.darf)}</td></tr>`;
+  h+=row("Sobra no seu bolso",R.tS.final,R.tA.final,"tot");
+  $("nota").innerHTML=h;
+  const c=(l,v,cls)=>`<tr><td>${l}</td><td class="n ${cls||""}">${v}</td></tr>`;
+  let ch=c("Valor nocional (exposição real)",brl(R.valorNocional));
+  ch+=c(R.b3?"Margem exigida (informada)":"Margem exigida (nocional ÷ "+nf(num(S.alav),0)+")",brl(R.margemUsada));
+  ch+=c("Margem livre",brl(R.margemLivre),sgnCls(R.margemLivre));
+  ch+=c("Alavancagem efetiva (nocional ÷ capital)",nf(R.alavancagemEfetiva,1)+"×");
+  ch+=c("Stops seguidos até zerar a conta",Number.isFinite(R.stopsAteZerar)?String(R.stopsAteZerar):"–");
+  ch+=c("Stops seguidos até perder metade",Number.isFinite(R.stopsAteMetade)?String(R.stopsAteMetade):"–");
+  ch+=c("Tamanho máximo arriscando "+nf(R.riscoPctEscolhido,1)+"% ("+brl(R.capital*R.riscoPctEscolhido/100)+")",Number.isFinite(R.qtdMaxPeloRisco)?nf(R.qtdMaxPeloRisco,R.b3?0:2)+(R.b3?" contrato(s)":" lote(s)"):"–");
+  $("cap").innerHTML=ch;
+  const al=[];
+  if(R.pontosAteStop>=0)al.push("O stop está do lado errado da entrada para uma "+R.lado+".");
+  if(R.pontosAteAlvo<=0)al.push("O alvo está do lado errado da entrada para uma "+R.lado+".");
+  if(R.margemLivre<0)al.push("A margem exigida passa do capital: a corretora não deixaria abrir essa posição.");
+  if(R.b3&&R.qtdMaxPeloRisco<1)al.push("Com esse stop, 1 contrato arrisca "+nf(R.percCapitalNoStop,1)+"% da conta, acima do limite de "+nf(R.riscoPctEscolhido,1)+"% que você definiu. No mini não existe fração de contrato.");
+  if(!R.b3&&R.qtdMaxPeloRisco<0.01)al.push("Nem 0,01 lote cabe no risco de "+nf(R.riscoPctEscolhido,1)+"% com esse stop.");
+  if(R.liquidoAlvo<=0&&R.pontosAteAlvo>0)al.push("Mesmo batendo o alvo, os custos levam o resultado para zero ou negativo.");
+  $("alerts").innerHTML=al.map(a=>`<div class="alert">${a}</div>`).join("");
+  let tn="";
+  if(R.b3&&S.modo==="day")tn="<ul><li>Day trade na B3: 20% de IR sobre o lucro líquido do mês. A corretora retém 1% (dedo-duro) e você abate esse valor no DARF, código 6015, pago até o último dia útil do mês seguinte.</li><li>Prejuízo de day trade só compensa lucro de day trade, nos meses seguintes.</li><li>Não existe isenção de R$ 20 mil para mercado futuro.</li></ul>";
+  else if(R.b3)tn="<ul><li>Swing trade em futuros: 15% de IR sobre o lucro líquido do mês. O dedo-duro de 0,005% aqui é aproximado sobre o lucro; na prática a base é o ajuste diário positivo.</li><li>Posição de um dia para o outro tem ajuste diário em dinheiro na sua conta e margem bem maior que a de day trade. Confira a margem de swing na corretora.</li></ul>";
+  else tn="<ul><li>Corretora no exterior: o lucro entra na declaração anual do IR, com alíquota de 15% (Lei 14.754/2023), convertido para reais. Não há dedo-duro.</li><li>O spread entra uma vez (você compra no ask e vende no bid). O swap só conta na modalidade swing.</li></ul>";
+  $("tax-note").innerHTML=tn+"<span>Valores de emolumentos, margem e comissão são exemplos. Os reais aparecem na nota de corretagem e no site da sua corretora.</span>";
+  renderPM();renderOnde();
+  if(S.tab==="cen")renderCen();
+  if(typeof syncClr==="function")try{syncClr();}catch(e){}
+}
+
+/* ---------- preço médio ---------- */
+function calcPM(){
+  const I=INFO[S.inst], b3=I.b3, usd=num(S.usdbrl);
+  const m=b3?I.mult():num(S.contrato)*usd;
+  const custoLado=b3?(num(S.corret)+num(S.emol)):(num(S.comissao)/2*usd);
+  let pos=0,avg=0,realizado=0,custos=0,passos=[];
+  for(const o of S.ops){
+    const q=num(o.qtd)*(o.lado==="C"?1:-1), p=num(o.preco);
+    if(!Number.isFinite(q)||!Number.isFinite(p)||q===0){passos.push(null);continue;}
+    custos+=Math.abs(q)*custoLado;
+    if(pos===0||Math.sign(pos)===Math.sign(q)){avg=(avg*Math.abs(pos)+p*Math.abs(q))/(Math.abs(pos)+Math.abs(q));pos+=q;}
+    else{
+      const fecha=Math.min(Math.abs(q),Math.abs(pos));
+      realizado+=(p-avg)*fecha*Math.sign(pos)*m;
+      const novo=pos+q;
+      if(novo===0){avg=0;} else if(Math.sign(novo)!==Math.sign(pos)){avg=p;}
+      pos=novo;
+    }
+    passos.push({pos,avg});
+  }
+  const atual=num(S.pmAtual);
+  const aberto=pos!==0?(atual-avg)*pos*m:0;
+  const custoSaida=Math.abs(pos)*custoLado;
+  const be=pos!==0?avg+Math.sign(pos)*(custos+custoSaida-realizado)/(Math.abs(pos)*m):NaN;
+  return{pos,avg,realizado,aberto,custos,custoSaida,be,passos,total:realizado+aberto-custos-custoSaida,atual};
+}
+function renderOps(){
+  const I=INFO[S.inst];
+  $("ops").innerHTML=`<tr><td style="font-size:11px;color:var(--muted)">LADO</td><td style="font-size:11px;color:var(--muted)">QTD</td><td style="font-size:11px;color:var(--muted)">PREÇO</td><td></td></tr>`+S.ops.map((o,i)=>`<tr>
+    <td><select data-i="${i}" data-k="lado" id="op-lado-${i}" aria-label="Lado da ordem ${i+1}"><option value="C"${o.lado==="C"?" selected":""}>Compra</option><option value="V"${o.lado==="V"?" selected":""}>Venda</option></select></td>
+    <td><input data-i="${i}" data-k="qtd" id="op-qtd-${i}" value="${String(o.qtd).replace(/"/g,"")}" inputmode="decimal" aria-label="Quantidade da ordem ${i+1}"></td>
+    <td><input data-i="${i}" data-k="preco" id="op-preco-${i}" value="${String(o.preco).replace(/"/g,"")}" inputmode="decimal" aria-label="Preço da ordem ${i+1}"></td>
+    <td><button class="x" type="button" data-del="${i}" aria-label="Remover ordem ${i+1}">×</button></td></tr>`).join("");
+}
+function renderPM(){
+  const P=calcPM(), I=INFO[S.inst], unit=I.b3?"":" lote(s)";
+  const c=(l,v,cls)=>`<tr><td>${l}</td><td class="n ${cls||""}">${v}</td></tr>`;
+  const ladoTxt=P.pos>0?"comprado":P.pos<0?"vendido":"zerado";
+  let h=c("Posição",P.pos===0?"zerado":ladoTxt+" "+nf(Math.abs(P.pos),I.b3?0:2)+(I.b3?" contrato(s)":unit));
+  h+=c("Preço médio",P.pos!==0?nf(P.avg,I.dec+ (I.b3?1:0)):"–");
+  h+=c("Resultado realizado",brl(P.realizado),sgnCls(P.realizado));
+  h+=c("Resultado em aberto (no preço atual)",brl(P.aberto),sgnCls(P.aberto));
+  h+=c("Custos pagos + custo para zerar",brl(-(P.custos+P.custoSaida)),"loss");
+  h+=c("Total se zerar agora (antes do IR)",brl(P.total),sgnCls(P.total));
+  h+=c("Preço para sair no zero a zero",Number.isFinite(P.be)?nf(P.be,I.dec+(I.b3?1:0)):"–");
+  $("pm-out").innerHTML=h;
+  const ref=num(S.entrada), fora=S.ops.some(o=>{const p=num(o.preco);return ref>0&&Number.isFinite(p)&&Math.abs(p/ref-1)>.25;});
+  $("pm-note").textContent=(fora?"Atenção: há ordens com preço muito longe da entrada da aba Operação. Parecem de outro ativo ou de um exemplo antigo; apague ou corrija essas linhas. ":"")+(P.pos!==0?("Cada "+(I.b3?"ponto":"pip")+" contra a posição agora custa "+brl((I.b3?1:num(S.pip))*(I.b3?I.mult():num(S.contrato)*num(S.usdbrl))*Math.abs(P.pos))+". Aumentar a mão no sentido contrário melhora o preço médio, mas também aumenta esse valor por ponto."):"");
+}
+
+/* ---------- onde está o preço ---------- */
+function renderOnde(){
+  const I=INFO[S.inst];
+  const mx=num(S.oMax),mn=num(S.oMin),at=num(S.oAtual),md=num(S.oMedia),atr=num(S.oAtr);
+  const rng=mx-mn, pos=rng>0?(at-mn)/rng:NaN, posM=rng>0?(md-mn)/rng:NaN;
+  const cl=v=>Math.max(0,Math.min(1,v))*100;
+  let bar=`<span class="end" style="left:0">${nf(mn,I.dec)}</span><span class="end" style="right:0">${nf(mx,I.dec)}</span>`;
+  if(Number.isFinite(posM))bar+=`<div class="mk avg" style="left:${cl(posM)}%"><span>média ${nf(md,I.dec)}</span></div>`;
+  if(Number.isFinite(pos))bar+=`<div class="mk" style="left:${cl(pos)}%"><span>atual ${nf(at,I.dec)}</span></div>`;
+  $("o-bar").innerHTML=bar;
+  const unit=INFO[S.inst].b3?1:num(S.pip), un=I.un;
+  const c=(l,v)=>`<tr><td>${l}</td><td class="n">${v}</td></tr>`;
+  let h=c("Amplitude do período",nf(rng/unit,1)+" "+un);
+  h+=c("Posição dentro da faixa (0% = mínima, 100% = máxima)",nf(pos*100,0)+"%");
+  h+=c("Distância da máxima",nf((mx-at)/unit,1)+" "+un);
+  h+=c("Distância da mínima",nf((at-mn)/unit,1)+" "+un);
+  h+=c("Distância da média",nf((at-md)/unit,1)+" "+un+" ("+nf((at-md)/md*100,2)+"%)");
+  if(Number.isFinite(atr)&&atr>0){h+=c("Distância da média em ATRs",nf((at-md)/atr,2)+" ATR");h+=c("Faixa do período em ATRs",nf(rng/atr,2)+" ATR");}
+  $("o-out").innerHTML=h;
+  const av=[];
+  if(rng<=0)av.push("A máxima precisa ser maior que a mínima.");
+  if(Number.isFinite(at)&&rng>0&&(at>mx||at<mn))av.push("O preço atual está fora da faixa máxima–mínima. Confira se os números são do mesmo período.");
+  if(Number.isFinite(md)&&rng>0&&Math.abs(md-(mx+mn)/2)>rng*5)av.push("A média está muito longe da faixa ("+nf(md,I.dec)+"). Parece de outro ativo ou de outro print: atualize ou apague esse campo.");
+  if(Number.isFinite(atr)&&rng>0&&(atr>rng*10||atr<rng/30))av.push("O ATR não combina com a escala desta faixa. Parece de outro ativo ou de outro print.");
+  const ref=num(S.entrada);
+  if(Number.isFinite(at)&&ref>0&&Math.abs(at/ref-1)>.25)av.push("O preço atual daqui está longe da entrada da aba Operação ("+nf(ref,I.dec)+"). Confira se o ativo escolhido é o mesmo do print.");
+  $("o-alert").innerHTML=av.map(a=>`<div class="alert">${a}</div>`).join("");
+}
+
+/* ---------- ligação dos campos ---------- */
+function fillInputs(){
+  TEXT_IDS.forEach(id=>{const el=$(id);if(el&&document.activeElement!==el)el.value=S[id]??"";});
+  $("inst").value=S.inst;
+  document.querySelectorAll("#lado button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===S.lado)));
+  document.querySelectorAll("#modo button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===S.modo)));
+  renderOps();
+}
+TEXT_IDS.forEach(id=>{const el=$(id);if(el)el.addEventListener("input",()=>{S[id]=el.value;save();render();});});
+$("inst").addEventListener("change",()=>{applyPreset($("inst").value);save();fillInputs();render();});
+$("lado").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;S.lado=b.dataset.v;save();fillInputs();render();});
+$("modo").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;S.modo=b.dataset.v;save();fillInputs();render();});
+$("ops").addEventListener("input",e=>{const t=e.target;if(t.dataset.i==null)return;S.ops[+t.dataset.i][t.dataset.k]=t.value;save();render();});
+$("ops").addEventListener("change",e=>{const t=e.target;if(t.tagName!=="SELECT")return;S.ops[+t.dataset.i].lado=t.value;save();render();});
+$("ops").addEventListener("click",e=>{const b=e.target.closest("[data-del]");if(!b)return;S.ops.splice(+b.dataset.del,1);save();renderOps();render();});
+$("add-op").addEventListener("click",()=>{const last=S.ops[S.ops.length-1];S.ops.push({lado:last?last.lado:"C",qtd:last?last.qtd:"1",preco:last?last.preco:S.entrada});save();renderOps();render();});
+function setTab(t){if(!["op","pm","onde","cen","ex"].includes(t))t="op";S.tab=t;save();document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab===t)));
+  ["op","pm","onde","cen","ex"].forEach(v=>$("view-"+v).classList.toggle("hide",t!==v));
+  if(t==="cen")renderCen();}
+
+/* ---------- cenários ---------- */
+const CEN_IDS={cenStopDe:"stopDe",cenStopAte:"stopAte",cenStopPasso:"stopPasso",cenQtds:"qtds",cenAlvos:"alvos"};
+const lista=s=>String(s||"").split(";").map(num).filter(v=>Number.isFinite(v)&&v>0);
+function calcCen(){
+  const I=INFO[S.inst], unit=I.b3?1:num(S.pip), dir=S.lado==="C"?1:-1, ent=num(S.entrada);
+  const de=num(S.cen.stopDe), ate=num(S.cen.stopAte), passo=num(S.cen.stopPasso);
+  const qtds=lista(S.cen.qtds), alvos=lista(S.cen.alvos), rows=[];
+  if(!(de>0&&ate>=de&&passo>0)||!qtds.length||!alvos.length||!Number.isFinite(ent))return{rows,erro:"Preencha stop de/até/passo, quantidades e alvos com números maiores que zero."};
+  const limite=num(S.capital)*num(S.riscoPct)/100;
+  for(const q of qtds)for(let sp=de;sp<=ate+1e-9;sp+=passo)for(const a of alvos){
+    if(rows.length>=3000)break;
+    const R=calc({qtd:String(q),stop:String(ent-dir*sp*unit),alvo:String(ent+dir*sp*a*unit)});
+    rows.push({q,sp:Math.round(sp*1e6)/1e6,ap:Math.round(sp*a*1e6)/1e6,perda:R.liquidoStop,ganho:R.liquidoAlvo,final:R.finalAposImpostoAlvo,rr:R.riscoRetorno,pct:R.percCapitalNoStop,zerar:R.stopsAteZerar,be:R.breakEvenMovimento,cabe:Math.abs(Math.min(R.liquidoStop,0))<=limite});
+  }
+  return{rows,limite};
+}
+function renderCen(){
+  Object.entries(CEN_IDS).forEach(([id,k])=>{const el=$(id);if(document.activeElement!==el)el.value=S.cen[k]??"";});
+  $("cenSoRisco").checked=!!S.cen.soRisco;
+  const I=INFO[S.inst], C=calcCen(), qd=I.b3?0:2;
+  if(C.erro){$("cen-resumo").textContent=C.erro;$("cen-tab").innerHTML="";return;}
+  const vis=S.cen.soRisco?C.rows.filter(r=>r.cabe):C.rows;
+  const nCabe=C.rows.filter(r=>r.cabe).length;
+  $("cen-resumo").textContent=C.rows.length+" cenários de "+I.nome+(C.rows.length>=3000?" (limite de 3000)":"")+" · "+nCabe+" cabem no risco de "+nf(num(S.riscoPct),1)+"% ("+brl(C.limite)+")"+(S.cen.soRisco?" · mostrando só esses":"");
+  const un=I.un;
+  let h=`<thead><tr><th>Qtd</th><th>Stop (${un})</th><th>Alvo (${un})</th><th>Perda no stop</th><th>Ganho no alvo</th><th>Após IR</th><th>R:R</th><th>% da conta</th><th>Stops até zerar</th><th>Cabe no risco</th></tr></thead><tbody>`;
+  h+=vis.slice(0,1500).map(r=>`<tr><td class="n">${nf(r.q,qd)}</td><td class="n">${nf(r.sp,un==="pts"&&S.inst==="WIN"?0:1)}</td><td class="n">${nf(r.ap,un==="pts"&&S.inst==="WIN"?0:1)}</td><td class="n ${sgnCls(r.perda)}">${brl(r.perda)}</td><td class="n ${sgnCls(r.ganho)}">${brl(r.ganho)}</td><td class="n">${brl(r.final)}</td><td class="n">${Number.isFinite(r.rr)?"1 : "+nf(r.rr,2):"–"}</td><td class="n">${nf(r.pct,1)}%</td><td class="n">${Number.isFinite(r.zerar)?r.zerar:"–"}</td><td class="${r.cabe?"gain":"loss"}">${r.cabe?"sim":"não"}</td></tr>`).join("");
+  if(vis.length>1500)h+=`<tr><td colspan="10">Mostrando 1500 de ${vis.length}. Copie a tabela para ver todos na planilha.</td></tr>`;
+  $("cen-tab").innerHTML=h+"</tbody>";
+}
+function cenCSV(){
+  const C=calcCen(), vis=S.cen.soRisco?C.rows.filter(r=>r.cabe):C.rows, f=v=>Number.isFinite(v)?String(Math.round(v*100)/100).replace(".",","):"";
+  return ["Qtd\tStop\tAlvo\tPerda no stop (R$)\tGanho no alvo (R$)\tApós IR (R$)\tR:R\t% da conta\tStops até zerar\tCabe no risco"].concat(vis.map(r=>[f(r.q),f(r.sp),f(r.ap),f(r.perda),f(r.ganho),f(r.final),f(r.rr),f(r.pct),Number.isFinite(r.zerar)?r.zerar:"",r.cabe?"sim":"não"].join("\t"))).join("\n");
+}
+Object.entries(CEN_IDS).forEach(([id,k])=>$(id).addEventListener("input",()=>{S.cen[k]=$(id).value;save();renderCen();}));
+$("cenSoRisco").addEventListener("change",()=>{S.cen.soRisco=$("cenSoRisco").checked;save();renderCen();});
+$("cenCopiar").addEventListener("click",()=>{
+  const txt=cenCSV(), b=$("cenCopiar"), ta=$("cen-csv");
+  const ok=()=>{b.textContent="Copiado. Cole na planilha";setTimeout(()=>b.textContent="Copiar tabela (para planilha)",2500);};
+  try{navigator.clipboard.writeText(txt).then(ok,()=>{ta.value=txt;ta.classList.remove("hide");ta.select();b.textContent="Selecionado: use Ctrl+C";});}
+  catch(e){ta.value=txt;ta.classList.remove("hide");ta.select();b.textContent="Selecionado: use Ctrl+C";}
+});
+document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>setTab(b.dataset.tab)));
+
+fillInputs();setTab(S.tab||"op");render();
+
+/* ---------- corrigir e preencher: ligação ---------- */
+let undoSnap=null;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+function showFix(log,nivel){
+  const box=$("fix-log");
+  if(!log.length){
+    if(nivel==="completo"){box.innerHTML='<span class="t">Tudo certo</span><div>Nada para corrigir: os campos estão coerentes para '+esc(INFO[S.inst].nome)+'.</div>';box.classList.remove("hide");}
+    return;
+  }
+  box.innerHTML='<span class="t">'+(nivel==="completo"?"Correções feitas":"Corrigido ao sair do campo")+" ("+log.length+')</span><ul>'+log.map(l=>"<li>"+esc(l)+"</li>").join("")+"</ul>";
+  box.classList.remove("hide");
+  $("fix-undo").classList.toggle("hide",!undoSnap);
+}
+let marcas={};
+const ancora=el=>(el.closest&&el.closest(".inwrap"))||el;
+function limparMarca(el){if(!el)return;el.classList.remove("fixed");const n=ancora(el).nextElementSibling;if(n&&n.classList&&n.classList.contains("fixmsg"))n.remove();}
+function marcarCampos(campos){
+  Object.keys(marcas).forEach(id=>limparMarca($(id)));
+  marcas={};
+  Object.entries(campos||{}).forEach(([id,msg])=>{
+    const el=$(id);if(!el||!el.insertAdjacentElement)return;
+    el.classList.add("fixed");
+    const s=document.createElement("small");s.className="fixmsg";s.textContent="Corrigido: "+msg;
+    ancora(el).insertAdjacentElement("afterend",s);marcas[id]=1;
+  });
+}
+function runFix(nivel){
+  const antes=JSON.stringify(S);
+  const log=corrigir(nivel);
+  if(JSON.stringify(S)!==antes)undoSnap=antes;
+  save();fillInputs();render();if(S.tab==="cen")renderCen();
+  showFix(log,nivel);
+  if(log.length||nivel==="completo")marcarCampos(log.campos);
+  return log;
+}
+/* digitar de novo num campo corrigido tira a marca dele */
+document.addEventListener("input",e=>{const t=e.target;if(t&&marcas[t.id]){limparMarca(t);delete marcas[t.id];}});
+/* Enter em qualquer campo = enviar: confere e corrige tudo */
+document.addEventListener("keydown",e=>{const t=e.target;if(e.key==="Enter"&&t&&t.tagName==="INPUT"&&t.type!=="checkbox"&&!t.closest(".chat")){e.preventDefault();t.blur();runFix("completo");}});
+if(S.autoFix===undefined)S.autoFix=true;
+$("fix-auto").checked=!!S.autoFix;
+$("fix-auto").addEventListener("change",()=>{S.autoFix=$("fix-auto").checked;save();});
+$("fix-btn").addEventListener("click",()=>runFix("completo"));
+$("fix-undo").addEventListener("click",()=>{
+  if(!undoSnap)return;
+  try{S=JSON.parse(undoSnap);}catch(e){return;}
+  undoSnap=null;save();fillInputs();setTab(S.tab||"op");render();
+  $("fix-undo").classList.add("hide");
+  marcarCampos({});
+  $("fix-log").innerHTML='<span class="t">Desfeito</span><div>Os campos voltaram ao que estavam antes.</div>';
+  $("fix-log").classList.remove("hide");
+});
+TEXT_IDS.forEach(id=>{const el=$(id);if(el)el.addEventListener("change",()=>{if(S.autoFix)runFix("leve");});});
+$("ops").addEventListener("change",e=>{if(S.autoFix&&e.target.tagName==="INPUT")runFix("leve");});
+
+/* ---------- apagar ---------- */
+const CLR_IDS=[...TEXT_IDS,...Object.keys(CEN_IDS)];
+function setCampo(id,v){if(CEN_IDS[id])S.cen[CEN_IDS[id]]=v;else S[id]=v;}
+CLR_IDS.forEach(id=>{
+  const el=$(id);if(!el||!el.parentNode||!el.insertAdjacentElement)return;
+  const w=document.createElement("span");w.className="inwrap";
+  el.parentNode.insertBefore(w,el);w.appendChild(el);
+  const b=document.createElement("button");b.type="button";b.className="clr";b.textContent="×";b.title="Apagar este campo";b.setAttribute("aria-label","Apagar este campo");
+  b.addEventListener("click",()=>{setCampo(id,"");el.value="";limparMarca(el);delete marcas[id];save();render();el.focus();});
+  w.appendChild(b);
+});
+function syncClr(){CLR_IDS.forEach(id=>{const el=$(id);const b=el&&el.nextElementSibling;if(b&&b.classList&&b.classList.contains("clr"))b.hidden=!el.value;});}
+document.addEventListener("input",syncClr);
+const GRUPOS={
+  op:{nome:"Operação",ids:["qtd","entrada","stop","alvo","spread","slip"]},
+  pm:{nome:"Preço médio",ids:["pmAtual"],ops:true},
+  onde:{nome:"Onde está o preço",ids:ONDE_KEYS},
+  cen:{nome:"Cenários",ids:Object.keys(CEN_IDS)},
+  tudo:{nome:"todas as abas",ids:CLR_IDS,ops:true}
+};
+function apagar(g){
+  const G=GRUPOS[g];if(!G)return;
+  undoSnap=JSON.stringify(S);
+  G.ids.forEach(id=>setCampo(id,""));
+  if(G.ops)S.ops=[];
+  save();marcarCampos({});fillInputs();render();if(S.tab==="cen")renderCen();syncClr();
+  $("fix-log").innerHTML='<span class="t">Apagado</span><div>'+(g==="tudo"?"Todos os campos foram apagados. Ativo, lado e modalidade continuam como estavam.":"Campos de "+esc(G.nome)+" apagados.")+' Preencha do zero, ou use Desfazer para voltar. "Enviar e corrigir" preenche o que ficar vazio com valores de exemplo.</div>';
+  $("fix-log").classList.remove("hide");$("fix-undo").classList.remove("hide");
+}
+document.querySelectorAll("[data-apagar]").forEach(b=>b.addEventListener("click",()=>apagar(b.dataset.apagar)));
+syncClr();
+
+/* ---------- exemplos ---------- */
+function renderEx(){
+  $("exs").innerHTML=EXEMPLOS.map(ex=>{
+    const R=calcWith(Object.assign({},S,ex.s)), I=INFO[ex.s.inst];
+    return `<div class="ex">
+      <span class="tag">${esc(I.nome)} · ${ex.s.lado==="C"?"compra":"venda"} · ${ex.s.modo==="day"?"day trade":"swing"}</span>
+      <h4>${esc(ex.titulo)}</h4>
+      <p>${esc(ex.resumo)}</p>
+      <dl>
+        <dt>Se bater o stop</dt><dd class="${sgnCls(R.liquidoStop)}">${brl(R.liquidoStop)}</dd>
+        <dt>Se bater o alvo</dt><dd class="${sgnCls(R.liquidoAlvo)}">${brl(R.liquidoAlvo)}</dd>
+        <dt>Após imposto</dt><dd>${brl(R.finalAposImpostoAlvo)}</dd>
+        <dt>Risco : retorno</dt><dd>${Number.isFinite(R.riscoRetorno)?"1 : "+nf(R.riscoRetorno,2):"–"}</dd>
+        <dt>% da conta no stop</dt><dd>${nf(R.percCapitalNoStop,1)}%</dd>
+      </dl>
+      <p class="mostra">Mostra: ${esc(ex.mostra)}</p>
+      <button class="btn" type="button" data-ex="${ex.id}">Carregar este exemplo</button>
+    </div>`;}).join("");
+}
+function carregarExemplo(id){
+  const ex=EXEMPLOS.find(e=>e.id===id);if(!ex)return;
+  undoSnap=JSON.stringify(S);
+  const novo=JSON.parse(JSON.stringify(ex.s));
+  Object.assign(S,novo);
+  save();marcarCampos({});fillInputs();setTab("op");render();
+  $("fix-log").innerHTML='<span class="t">Exemplo carregado</span><div>'+esc(ex.titulo)+'. Todas as abas foram preenchidas: veja também Preço médio, Onde está o preço e Cenários. Os números são fictícios. Use Desfazer para voltar ao que estava antes.</div>';
+  $("fix-log").classList.remove("hide");$("fix-undo").classList.remove("hide");
+}
+$("exs").addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-ex]");if(b)carregarExemplo(b.dataset.ex);});
+renderEx();
+
+})();
+</script>
+
+</body>
+</html>
