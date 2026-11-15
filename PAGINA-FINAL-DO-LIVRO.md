@@ -36,3 +36,15 @@ A calculadora não pede cadastro nem e-mail, e os números que você digita fica
 - **Livro impresso:** o link não é clicável, então mantenha o endereço por extenso e o QR code. Imprima o QR com pelo menos 2,5 cm de lado.
 - **Antes de publicar:** teste o QR com dois celulares diferentes.
 - **Se o endereço mudar um dia:** atualize o livro. As regras da Amazon pedem que links quebrados sejam desativados.
+
+## QR code de cada livro (abre o mentor com o checklist do livro)
+
+Use o QR do próprio livro: a calculadora abre igual, mas o Mentor já vem com o checklist daquele método. O QR geral (`qrcode-nota-do-trader.png`) continua valendo para os livros já publicados.
+
+| Livro | Endereço | QR code |
+|---|---|---|
+| Entradas Contextualizadas com Wyckoff e Elliott no WIN e WDO | marcos-963.github.io/nota-do-trader/?livro=contextualizadas | `qrcodes/qrcode-entradas-contextualizadas.png` |
+| Order Block: Entradas Matadoras (SMC) | marcos-963.github.io/nota-do-trader/?livro=orderblock | `qrcodes/qrcode-order-block.png` |
+| Wyckoff na Prática: Resiliência | marcos-963.github.io/nota-do-trader/?livro=wyckoff | `qrcodes/qrcode-wyckoff-na-pratica.png` |
+
+Frase sugerida para a página "Ferramenta de apoio" de cada um: "O Mentor da calculadora já abre com o checklist deste livro."
