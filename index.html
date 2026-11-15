@@ -164,6 +164,11 @@ textarea{font-family:var(--f-body);resize:vertical}
 .malerta .mex{display:block;color:var(--muted);font-size:12px;margin-top:3px}
 @media (min-width:900px){.mentor{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px 20px;align-items:start}.mentor>p.note:first-child{grid-column:1/-1}}
 @media (max-width:420px){.mentor .mgrid{grid-template-columns:1fr}}
+#col-in input::placeholder{color:var(--muted);font-style:italic;opacity:1}
+.ideia{border:1px dashed var(--op-line);border-radius:6px;padding:9px 11px;font-size:13px;background:var(--op-field);display:grid;gap:6px;margin-top:10px}
+.ideia .t{font:700 12px var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.ideia ul{margin:0;padding-left:18px;display:grid;gap:3px}
+.ideia .rod{display:flex;flex-wrap:wrap;gap:8px;align-items:center;color:var(--muted);font-size:12px}
 .fix-log ul{margin:6px 0 0;padding-left:18px}
 .fix-log li{margin-bottom:3px}
 .fix-log .t{font:600 12px var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
@@ -247,6 +252,7 @@ textarea{font-family:var(--f-body);resize:vertical}
       <label>Alvo<input id="alvo" inputmode="decimal"></label>
       <label>Risco por trade (% do capital)<input id="riscoPct" inputmode="decimal"></label>
     </div>
+    <div class="ideia hide" id="ideia" aria-live="polite"></div>
 
     <h3>Execução</h3>
     <div class="fields">
@@ -487,10 +493,29 @@ const ONDE_KEYS=["oMax","oMin","oAtual","oMedia","oAtr"];
    nivel "completo": também lado do stop/alvo, máxima/mínima trocadas, média/ATR de outro print */
 const TICK={WDO:.5,WIN:5,FX:.00001,XAU:.01};
 function corrigir(nivel){
+  // -1) preço de outro ativo: 123400 no WDO é preço de WIN; troca o ativo e mantém o que a pessoa digitou
+  let trocaMsg=null;
+  if(nivel==="completo"){
+    const e0=num(S.entrada), FAIXA={WDO:[2500,12000],WIN:[40000,400000],FX:[.3,3],XAU:[900,9000]}, fx=FAIXA[S.inst];
+    if(fx&&Number.isFinite(e0)&&e0>0&&(e0<fx[0]||e0>fx[1])){
+      const novo=e0>=40000&&e0<=400000?"WIN":(e0>=.3&&e0<=3?"FX":null);
+      if(novo&&novo!==S.inst){
+        const deK=S.inst, de=INFO[S.inst].nome, k={qtd:S.qtd,capital:S.capital,lado:S.lado,modo:S.modo,riscoPct:S.riscoPct,entrada:S.entrada,stop:S.stop,alvo:S.alvo};
+        applyPreset(novo);
+        S.capital=k.capital;S.lado=k.lado;S.modo=k.modo;S.riscoPct=k.riscoPct;S.entrada=k.entrada;
+        const den=v=>{const n=num(v);return Number.isFinite(n)&&n>=FAIXA[novo][0]&&n<=FAIXA[novo][1];};
+        S.stop=den(k.stop)?k.stop:"";S.alvo=den(k.alvo)?k.alvo:"";
+        if(INFO[novo].b3)S.qtd=k.qtd;
+        S.oAtual="";S.pmAtual=k.entrada;S.ops=[{lado:S.lado,qtd:S.qtd||PRESETS[novo].qtd,preco:k.entrada}];
+        trocaMsg="Ativo: "+k.entrada+" não é preço de "+de+" (que anda perto de "+PRESETS[deK].entrada+"). É faixa de preço de "+INFO[novo].nome+": o ativo passa para "+INFO[novo].nome+", com "+(INFO[novo].b3?"contratos, ":"")+"capital, lado e modalidade mantidos e os custos de referência dele. Se era mesmo "+de+", digite o preço certo (ou use Desfazer depois de aceitar).";
+      }
+    }
+  }
   const I=INFO[S.inst], P=PRESETS[S.inst], log=[], dec=S.inst==="FX"?5:S.inst==="XAU"?2:S.inst==="WDO"?1:0;
   const fmt=v=>String(Math.round(v*1e6)/1e6).replace(".",",");
   const campos={}; log.campos=campos;
   const note=(k,msg)=>{log.push(msg);campos[k]=campos[k]?campos[k]+" "+msg:msg;};
+  if(trocaMsg)note("inst",trocaMsg);
   const put=(k,v,msg)=>{const novo=fmt(v);if(String(S[k])!==novo){S[k]=novo;if(msg)note(k,msg);}};
   const tick=TICK[S.inst];
   const roundTick=v=>Math.round(Math.round(v/tick)*tick*1e6)/1e6;
@@ -1102,6 +1127,37 @@ if($("mentor")){
 
 
 renderEx();
+
+
+/* ---------- autocompletar ao vivo: sugestões nos campos vazios, sem mudar nada até a pessoa aceitar ---------- */
+function sugestoes(){
+  const keep=S, out={vals:{},log:[],inst:null};
+  try{
+    S=JSON.parse(JSON.stringify(keep));
+    const lg=corrigir("completo");
+    TEXT_IDS.forEach(id=>{const a=String(keep[id]??"").trim(), b=String(S[id]??"").trim();if(!a&&b)out.vals[id]=b;});
+    if(S.inst!==keep.inst)out.inst=S.inst;
+    out.log=lg.slice();
+  }catch(e){}
+  finally{S=keep;}
+  return out;
+}
+const IDEIA_CHAVES=["Ativo","Entrada","Stop","Alvo","Risco por trade","Dias carregando"];
+function renderIdeia(){
+  const box=$("ideia");if(!box)return;
+  const sg=sugestoes();
+  TEXT_IDS.forEach(id=>{const el=$(id);if(!el)return;
+    if(el.dataset.ph0===undefined)el.dataset.ph0=el.getAttribute("placeholder")||"";
+    el.placeholder=sg.vals[id]!=null?"sugestão: "+sg.vals[id]:el.dataset.ph0;});
+  const linhas=sg.log.filter(l=>IDEIA_CHAVES.some(k=>l.startsWith(k)));
+  if(!linhas.length){box.classList.add("hide");box.innerHTML="";return;}
+  const escI=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+  box.innerHTML='<span class="t">Ideia do autocompletar</span><ul>'+linhas.map(l=>"<li>"+escI(l)+"</li>").join("")+
+    '</ul><div class="rod"><button class="btn small" type="button" id="ideia-ok">Usar sugestões</button><span>Nada mudou ainda. As sugestões aparecem em cinza nos campos vazios. Também dá para aceitar com Enter ou com Enviar e corrigir.</span></div>';
+  box.classList.remove("hide");
+}
+document.addEventListener("click",e=>{if(e.target&&e.target.id==="ideia-ok")runFix("completo");});
+{ const renderBaseIdeia=render; render=function(){renderBaseIdeia.apply(this,arguments);try{renderIdeia();}catch(e){}}; renderIdeia(); }
 
 /* ---------- salvar operações ---------- */
 const SKEY="nota-trader-leitor-v1-salvas", ST={"btn":"Salvar","lista":"Salvas","tit":"Operações salvas","nome":"Nome","ph":"ex.: WIN compra rompimento","salvar":"Salvar esta","abrir":"Abrir","apagar":"Apagar","vazio":"Nada salvo ainda. Dê um nome e toque em Salvar esta.","baixar":"Baixar arquivo","carregar":"Abrir arquivo","fechar":"Fechar","ok":"Salva","okTxt":"Ficou na lista deste aparelho. Para levar para outro celular ou computador, use Baixar arquivo.","aberta":"Operação aberta","abertaTxt":"Todas as abas voltaram como estavam quando você salvou. Use Desfazer para voltar ao que estava antes.","conf":"Apagar a operação salva","subst":"Já existe uma salva com esse nome. Substituir?","imp":"Arquivo aberto","ruim":"Esse arquivo não é uma cópia da Nota do Trader.","arq":"nota-do-trader-salvas.json","loc":"pt-BR","aviso":"Fica guardado só neste navegador. Se limpar os dados do navegador, a lista some: baixe o arquivo para ter uma cópia.","compra":"Compra","venda":"Venda"};
