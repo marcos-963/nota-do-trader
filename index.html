@@ -141,6 +141,14 @@ textarea{font-family:var(--f-body);resize:vertical}
 .fix-auto{flex-direction:row;align-items:center;gap:6px;color:var(--ink);font-size:13px}
 .fix-auto input{width:auto}
 .fix-log{flex-basis:100%;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:6px;background:var(--panel);padding:10px 12px;font-size:13px}
+.salvas{flex-basis:100%;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:6px;background:var(--panel);padding:10px 12px;font-size:13px;display:grid;gap:10px}
+.salvas .lin{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.salvas .lin input{flex:1 1 200px;min-width:0}
+.salvas ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.salvas li{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;border-top:1px solid var(--line);padding-top:6px}
+.salvas li .nm{flex:1 1 160px;min-width:0;overflow-wrap:anywhere;font-weight:600}
+.salvas li .dt{color:var(--muted);font-size:12px}
+.salvas .av{color:var(--muted);font-size:12px;margin:0}
 .fix-log ul{margin:6px 0 0;padding-left:18px}
 .fix-log li{margin-bottom:3px}
 .fix-log .t{font:600 12px var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
@@ -187,9 +195,17 @@ textarea{font-family:var(--f-body);resize:vertical}
   <button class="btn" type="button" id="fix-btn">Enviar e corrigir</button>
   <span class="note" style="margin:0">ou aperte Enter em qualquer campo</span>
   <button class="btn ghost small danger" type="button" data-apagar="tudo" title="Apaga todos os campos de todas as abas. Dá para desfazer.">Apagar tudo</button>
+  <button class="btn ghost small" type="button" id="salvar-btn" aria-expanded="false" aria-controls="salvas">Salvar <span id="salvas-n"></span></button>
   <button class="btn ghost hide" type="button" id="fix-undo">Desfazer</button>
   <label class="fix-auto"><input type="checkbox" id="fix-auto"> Corrigir sozinho ao sair do campo</label>
   <div class="fix-log hide" id="fix-log"></div>
+  <div class="salvas hide" id="salvas">
+    <div class="lin"><strong>Operações salvas</strong><button class="btn ghost small" type="button" id="salvas-fechar" style="margin-left:auto">Fechar</button></div>
+    <div class="lin"><input type="text" id="salvas-nome" aria-label="Nome" placeholder="ex.: WIN compra rompimento" maxlength="80"><button class="btn small" type="button" id="salvas-ok">Salvar esta</button></div>
+    <ul id="salvas-lista"></ul>
+    <div class="lin"><button class="btn ghost small" type="button" id="salvas-baixar">Baixar arquivo</button><button class="btn ghost small" type="button" id="salvas-abrir">Abrir arquivo</button><input type="file" id="salvas-arq" accept=".json,application/json" hidden></div>
+    <p class="av">Fica guardado só neste navegador. Se limpar os dados do navegador, a lista some: baixe o arquivo para ter uma cópia.</p>
+  </div>
 </div>
 
 <div class="grid">
@@ -893,6 +909,61 @@ function carregarExemplo(id){
 }
 $("exs").addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-ex]");if(b)carregarExemplo(b.dataset.ex);});
 renderEx();
+
+/* ---------- salvar operações ---------- */
+const SKEY="nota-trader-leitor-v1-salvas", ST={"btn":"Salvar","lista":"Salvas","tit":"Operações salvas","nome":"Nome","ph":"ex.: WIN compra rompimento","salvar":"Salvar esta","abrir":"Abrir","apagar":"Apagar","vazio":"Nada salvo ainda. Dê um nome e toque em Salvar esta.","baixar":"Baixar arquivo","carregar":"Abrir arquivo","fechar":"Fechar","ok":"Salva","okTxt":"Ficou na lista deste aparelho. Para levar para outro celular ou computador, use Baixar arquivo.","aberta":"Operação aberta","abertaTxt":"Todas as abas voltaram como estavam quando você salvou. Use Desfazer para voltar ao que estava antes.","conf":"Apagar a operação salva","subst":"Já existe uma salva com esse nome. Substituir?","imp":"Arquivo aberto","ruim":"Esse arquivo não é uma cópia da Nota do Trader.","arq":"nota-do-trader-salvas.json","loc":"pt-BR","aviso":"Fica guardado só neste navegador. Se limpar os dados do navegador, a lista some: baixe o arquivo para ter uma cópia.","compra":"Compra","venda":"Venda"};
+let salvas=[];
+try{const v=JSON.parse(localStorage.getItem(SKEY)||"[]");if(Array.isArray(v))salvas=v.filter(x=>x&&x.nome&&x.s);}catch(e){}
+function gravarSalvas(){try{localStorage.setItem(SKEY,JSON.stringify(salvas));}catch(e){}}
+const escS=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+function nomePadrao(){const d=new Date();return ((INFO[S.inst]&&INFO[S.inst].nome)||S.inst||"")+" · "+(S.lado==="V"?ST.venda:ST.compra)+" · "+d.toLocaleDateString(ST.loc,{day:"2-digit",month:"2-digit"})+" "+d.toLocaleTimeString(ST.loc,{hour:"2-digit",minute:"2-digit"});}
+function renderSalvas(){
+  $("salvas-n").textContent=salvas.length?"("+salvas.length+")":"";
+  $("salvas-lista").innerHTML=salvas.length?salvas.map((x,i)=>'<li><span class="nm">'+escS(x.nome)+'</span><span class="dt">'+escS(new Date(x.em).toLocaleString(ST.loc,{day:"2-digit",month:"2-digit",year:"2-digit",hour:"2-digit",minute:"2-digit"}))+'</span><button class="btn small" type="button" data-sabrir="'+i+'">'+ST.abrir+'</button><button class="btn ghost small danger" type="button" data-sapagar="'+i+'">'+ST.apagar+'</button></li>').join(""):'<li class="dt" style="border:0;padding:0">'+ST.vazio+'</li>';
+}
+function avisoS(t,txt){$("fix-log").innerHTML='<span class="t">'+escS(t)+'</span><div>'+escS(txt)+'</div>';$("fix-log").classList.remove("hide");}
+function abrirPainel(abrir){$("salvas").classList.toggle("hide",!abrir);$("salvar-btn").setAttribute("aria-expanded",String(abrir));if(abrir){$("salvas-nome").value=nomePadrao();renderSalvas();$("salvas-nome").focus();$("salvas-nome").select();}}
+$("salvar-btn").addEventListener("click",()=>abrirPainel($("salvas").classList.contains("hide")));
+$("salvas-fechar").addEventListener("click",()=>abrirPainel(false));
+function salvarAtual(){
+  const nome=($("salvas-nome").value.trim()||nomePadrao()).slice(0,80);
+  const i=salvas.findIndex(x=>x.nome.toLowerCase()===nome.toLowerCase());
+  if(i>=0&&!confirm(ST.subst))return;
+  const item={nome,em:Date.now(),s:JSON.parse(JSON.stringify(S))};
+  if(i>=0)salvas.splice(i,1);
+  salvas.unshift(item);gravarSalvas();renderSalvas();$("salvas-nome").value=nomePadrao();
+  avisoS(ST.ok+": "+nome,ST.okTxt);
+}
+$("salvas-ok").addEventListener("click",salvarAtual);
+$("salvas-nome").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();e.stopPropagation();salvarAtual();}});
+$("salvas-lista").addEventListener("click",e=>{
+  const a=e.target.closest&&e.target.closest("[data-sabrir]"), d=e.target.closest&&e.target.closest("[data-sapagar]");
+  if(a){const x=salvas[+a.dataset.sabrir];if(!x)return;
+    undoSnap=JSON.stringify(S);
+    S={...S,...JSON.parse(JSON.stringify(x.s))};
+    save();marcarCampos({});fillInputs();setTab(S.tab||"op");render();try{syncClr();}catch(_){}
+    avisoS(ST.aberta+": "+x.nome,ST.abertaTxt);$("fix-undo").classList.remove("hide");}
+  if(d){const x=salvas[+d.dataset.sapagar];if(!x||!confirm(ST.conf+" \u201c"+x.nome+"\u201d?"))return;salvas.splice(+d.dataset.sapagar,1);gravarSalvas();renderSalvas();}
+});
+let downloadsNs=null;
+try{if(window.claude&&typeof window.claude.use==="function")window.claude.use("downloads").then(n=>{downloadsNs=n;},()=>{});}catch(e){}
+$("salvas-baixar").addEventListener("click",async()=>{
+  const data=JSON.stringify({app:"nota-do-trader",versao:1,salvas},null,1);
+  if(downloadsNs){try{await downloadsNs.save({filename:ST.arq,data});}catch(e){}return;}
+  const url=URL.createObjectURL(new Blob([data],{type:"application/json"}));
+  const a=document.createElement("a");a.href=url;a.download=ST.arq;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);
+});
+$("salvas-abrir").addEventListener("click",()=>$("salvas-arq").click());
+$("salvas-arq").addEventListener("change",async e=>{
+  const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;
+  try{const j=JSON.parse(await f.text());const lista=Array.isArray(j)?j:j&&j.salvas;
+    if(!Array.isArray(lista))throw 0;
+    let n=0;lista.forEach(x=>{if(!x||typeof x.nome!=="string"||!x.s||typeof x.s!=="object")return;
+      if(salvas.some(y=>y.nome===x.nome&&y.em===x.em))return;salvas.push({nome:x.nome.slice(0,80),em:+x.em||Date.now(),s:x.s});n++;});
+    salvas.sort((a,b)=>b.em-a.em);gravarSalvas();renderSalvas();avisoS(ST.imp,n+" operação(ões) adicionada(s) à lista.");
+  }catch(_){avisoS(ST.imp,ST.ruim);}
+});
+renderSalvas();
 
 })();
 </script>
