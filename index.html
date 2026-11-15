@@ -496,6 +496,51 @@ function corrigir(nivel){
   const roundTick=v=>Math.round(Math.round(v/tick)*tick*1e6)/1e6;
   const NOMES={entrada:"Entrada",stop:"Stop",alvo:"Alvo",pmAtual:"Preço atual (preço médio)",oMax:"Máxima",oMin:"Mínima",oAtual:"Preço atual",oMedia:"Média",qtd:"Quantidade",capital:"Capital",
     riscoPct:"Risco por trade",spread:"Spread",slip:"Slippage",corret:"Corretagem",emol:"Emolumentos",margem:"Margem",dias:"Dias",comissao:"Comissão",alav:"Alavancagem",noites:"Noites",usdbrl:"Dólar"};
+
+  // 0) autocompletar: entrada, stop e alvo vazios saem das regras da própria pessoa (risco por trade e R:R mínimo)
+  if(nivel==="completo"&&["entrada","stop","alvo"].some(k=>!Number.isFinite(num(S[k])))){
+    const Mn=(S.mentor&&typeof S.mentor==="object")?S.mentor:{}, nv=Mn.nivel||"inter", explica=nv!=="avanc";
+    const dir=S.lado==="V"?-1:1, un=I.b3?" pts":" pips", pu=I.b3?1:num(S.pip)||num(P.pip);
+    const dist=d=>nf(d/pu,I.b3?(S.inst==="WDO"?1:0):1)+un;
+    // custos e regras vazios primeiro, porque a conta do stop depende deles
+    (I.b3?["spread","slip","corret","emol","margem","dias"]:["spread","slip","comissao","alav","noites"]).forEach(k=>{if(k==="dias"&&S.modo==="swing")return;if(!Number.isFinite(num(S[k])))put(k,num(P[k]),NOMES[k]+": estava vazio, preenchido com a referência "+fmt(num(P[k]))+" (confira na sua corretora).");});
+    if(!Number.isFinite(num(S.capital)))put("capital",1000,"Capital: estava vazio, preenchido com 1000 (troque pelo valor da sua conta).");
+    if(!Number.isFinite(num(S.riscoPct))){const r=nv==="avanc"?2:1;put("riscoPct",r,"Risco por trade: estava vazio, preenchido com "+r+"%"+(explica?" (referência conservadora para quem está começando; é a sua regra, troque se usar outra).":"."));}
+    if(I.b3&&S.modo==="swing"&&!(num(S.dias)>0))put("dias",1,"Dias carregando: em swing a posição dorme pelo menos 1 noite. Ficou 1 (troque pelo número de dias que pretende ficar).");
+    if(!Number.isFinite(num(S.qtd))||num(S.qtd)<=0)put("qtd",num(P.qtd),"Quantidade: estava vazia, preenchida com "+P.qtd+".");
+    // entrada
+    if(!Number.isFinite(num(S.entrada))){
+      const oa=num(S.oAtual), pa=num(S.pmAtual), base=num(P.entrada);
+      const ok=v=>Number.isFinite(v)&&v>0&&Math.abs(v/base-1)<.6&&Math.abs(v-base)>1e-9;
+      if(ok(oa))put("entrada",roundTick(oa),"Entrada: estava vazia, preenchida com o preço atual da aba Onde está o preço ("+fmt(roundTick(oa))+").");
+      else if(ok(pa))put("entrada",roundTick(pa),"Entrada: estava vazia, preenchida com o preço atual da aba Preço médio ("+fmt(roundTick(pa))+").");
+      else put("entrada",base,"Entrada: estava vazia, preenchida com o preço de exemplo "+fmt(base)+". Troque pelo preço do seu gráfico: stop e alvo foram calculados a partir dele.");
+    }
+    const ent=num(S.entrada), cap=num(S.capital), rp=num(S.riscoPct), orc=cap*rp/100;
+    const dPad=Math.abs(num(P.entrada)-num(P.stop)), nPad=Math.max(1,Math.round(dPad/tick));
+    const perda=(n,o)=>Math.abs(calc(Object.assign({entrada:ent,stop:ent-dir*n*tick,alvo:ent+dir*n*tick*2},o||{})).liquidoStop);
+    // stop: o ponto mais longe que ainda cabe na regra de risco
+    if(!Number.isFinite(num(S.stop))){
+      let lo=0,hi=Math.max(nPad*40,Math.round(ent*.2/tick));
+      if(perda(1)<=orc){lo=1;while(lo<hi){const mid=Math.ceil((lo+hi)/2);if(perda(mid)<=orc)lo=mid;else hi=mid-1;}}
+      if(lo>=Math.max(1,Math.round(nPad/4))){
+        put("stop",roundTick(ent-dir*lo*tick),"Stop: estava vazio. Ficou a "+dist(lo*tick)+" da entrada, o ponto mais longe que cabe na sua regra de "+nf(rp,1)+"% ("+brl(orc)+") com "+S.qtd+(I.b3?" contrato(s)":" lote(s)")+"."+(explica?" Isso é o limite da sua regra, não um nível do gráfico: se o ponto que invalida a sua ideia fica antes, use ele; se fica depois, reduza a quantidade.":""));
+      }else{
+        const p1=perda(nPad,{qtd:I.b3?1:.01}), capNec=p1/(rp/100), rpNec=p1/cap*100;
+        put("stop",roundTick(ent-dir*nPad*tick),"Stop: estava vazio. Com "+S.qtd+(I.b3?" contrato(s)":" lote(s)")+" e "+brl(cap)+", a sua regra de "+nf(rp,1)+"% ("+brl(orc)+") "+(lo<1?"não cobre nem os custos de entrada e saída":"só comporta um stop de "+dist(lo*tick)+", curto demais para "+I.nome)+". Coloquei um stop de exemplo de "+dist(nPad*tick)+" só para a conta aparecer."+
+          (explica?" Com esse stop, 1 "+(I.b3?"contrato":"lote de 0,01")+" perde "+brl(p1)+": caberia na regra com capital de "+brl(capNec)+", ou arriscando "+nf(rpNec,1)+"% da conta.":""));
+      }
+    }
+    // alvo: a menor distância que entrega o R:R mínimo da pessoa, já com custos
+    if(!Number.isFinite(num(S.alvo))){
+      const rr=num(Mn.rrMin)>0?num(Mn.rrMin):1.5, st=num(S.stop);
+      const rrDe=n=>calc({entrada:ent,stop:st,alvo:ent+dir*n*tick}).riscoRetorno;
+      let lo=1,hi=Math.max(nPad*80,Math.round(ent*.4/tick));
+      if(Number.isFinite(st)&&rrDe(hi)>=rr){while(lo<hi){const mid=Math.floor((lo+hi)/2);if(rrDe(mid)>=rr)hi=mid;else lo=mid+1;}
+        put("alvo",roundTick(ent+dir*lo*tick),"Alvo: estava vazio. Ficou a "+dist(lo*tick)+" da entrada, a menor distância que dá o risco:retorno líquido de 1 : "+nf(rr,1)+" da sua regra (já com custos)."+(explica?" Confira se existe um motivo no gráfico para o preço chegar até lá; se o nível do gráfico fica antes, a operação não fecha a sua regra.":""));}
+      else put("alvo",roundTick(ent+dir*nPad*2*tick),"Alvo: estava vazio, preenchido com distância de exemplo (2 vezes o stop de exemplo).");
+    }
+  }
   // 1) campos de preço: escala pela mediana
   const precoKeys=["entrada","stop","alvo","pmAtual","oMax","oMin","oAtual","oMedia"];
   const vals=[...precoKeys.map(k=>num(S[k])),...S.ops.map(o=>num(o.preco))].filter(v=>Number.isFinite(v)&&v>0).sort((a,b)=>a-b);
