@@ -285,8 +285,9 @@ textarea{font-family:var(--f-body);resize:vertical}
     <div id="print-box" style="margin:14px 0 6px">
       <h3>Print do gráfico</h3>
       <div class="print-drop" id="print-drop" tabindex="0" role="button" aria-label="Colar ou escolher o print do gráfico">Cole aqui o print do gráfico (Ctrl+V), arraste a imagem ou toque para escolher o arquivo</div>
+      <div class="pre-row hide" id="print-cap-row"><button class="btn small" type="button" id="print-capturar">Capturar a tela da XTB</button><span class="note" style="margin:0">escolha a janela ou a aba da XTB e o gráfico entra aqui</span></div>
       <input type="file" id="print-file" accept="image/*" class="hide">
-      <figure id="print-fig" class="hide"><img id="print-img" alt="Print do gráfico desta operação"><figcaption><span id="print-info"></span><span><button class="btn ghost small" type="button" id="print-trocar">Trocar</button> <button class="btn ghost small danger" type="button" id="print-apagar">Tirar print</button></span></figcaption></figure>
+      <figure id="print-fig" class="hide"><img id="print-img" alt="Print do gráfico desta operação"><figcaption><span id="print-info"></span><span><button class="btn ghost small" type="button" id="print-trocar">Trocar</button> <button class="btn ghost small danger" type="button" id="print-apagar">Remover print</button></span></figcaption></figure>
       <p class="note" id="print-nota">O print fica guardado com a operação: entra no Salvar e no arquivo baixado. Fica só neste aparelho.</p>
     </div>
     <h3>Execução</h3>
@@ -1565,7 +1566,26 @@ if($("print-box")){
     const it=[...(e.clipboardData&&e.clipboardData.items||[])].find(i=>i.kind==="file"&&/^image\//.test(i.type));
     if(it)printReceber(it.getAsFile());
   });
-  $("print-apagar").addEventListener("click",()=>{if(!confirm("Tirar o print desta operação?"))return;S.print="";S.printEm=0;save();$("print-nota").textContent="Print tirado. Cole outro quando quiser.";renderPrint();});
+  let printConf=null;
+  $("print-apagar").addEventListener("click",()=>{const b=$("print-apagar");
+    if(!printConf){b.textContent="Toque de novo para remover";printConf=setTimeout(()=>{printConf=null;b.textContent="Remover print";},4000);return;}
+    clearTimeout(printConf);printConf=null;b.textContent="Remover print";
+    S.print="";S.printEm=0;save();$("print-nota").textContent="Print removido. Cole ou capture outro quando quiser.";renderPrint();});
+  const podeCap=!!(navigator.mediaDevices&&navigator.mediaDevices.getDisplayMedia)&&!(window.matchMedia&&matchMedia("(pointer:coarse)").matches);
+  if(podeCap)$("print-cap-row").classList.remove("hide");
+  async function printCapturar(){
+    let st=null;
+    try{st=await navigator.mediaDevices.getDisplayMedia({video:true,audio:false});
+      const v=document.createElement("video");v.srcObject=st;v.muted=true;v.playsInline=true;await v.play();
+      await new Promise(r=>setTimeout(r,500));
+      const c=document.createElement("canvas");c.width=v.videoWidth||1280;c.height=v.videoHeight||720;c.getContext("2d").drawImage(v,0,0,c.width,c.height);
+      st.getTracks().forEach(t=>t.stop());st=null;
+      const b=await new Promise(r=>c.toBlob(r,"image/png"));
+      await printReceber(new File([b],"captura.png",{type:"image/png"}));
+    }catch(e){if(st)st.getTracks().forEach(t=>t.stop());
+      $("print-nota").textContent=e&&e.name==="NotAllowedError"?"Captura cancelada. Toque em Capturar de novo e escolha a janela da XTB.":"Este navegador não deixou capturar a tela. Use Windows + Shift + S e depois Ctrl+V aqui.";}
+  }
+  $("print-capturar").addEventListener("click",printCapturar);
   $("print-img").addEventListener("click",()=>$("print-img").classList.toggle("grande"));
   const ap=document.querySelector('[data-apagar="op"]');
   if(ap)ap.addEventListener("click",()=>setTimeout(()=>{if(!String(S.entrada||"").trim()&&S.print){S.print="";S.printEm=0;save();renderPrint();}},0));
