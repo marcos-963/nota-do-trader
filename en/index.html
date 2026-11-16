@@ -5,7 +5,18 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Trade Note · Forex and Gold Calculator</title>
 <meta name="description" content="Free calculator from Marcus Deleon: spread, slippage, commission, swap, margin, average price and scenarios for Forex and gold.">
-<style>:root{color-scheme:light}body{margin:0;font:14px system-ui,-apple-system,"Segoe UI",sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<style>:root{color-scheme:light}body{margin:0;font:14px system-ui,-apple-system,"Segoe UI",sans-serif}img{max-width:100%}[hidden]{display:none!important}.mz-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+#mz-kpis .kpi .v{font-size:17px;overflow-wrap:anywhere}
+@media (max-width:420px){#mz-kpis .kpi .v{font-size:15px}}
+.mz-grid .full{grid-column:1/-1}
+.mz-alerts{display:grid;gap:6px;margin-top:10px}
+.mz-al{border:1px solid var(--line);border-left:4px solid var(--muted);border-radius:6px;padding:7px 10px;font-size:13px;background:var(--bg);color:var(--ink)}
+.mz-al.alto{border-left-color:var(--loss)}
+.mz-al.medio{border-left-color:var(--warn);background:var(--warn-bg)}
+.mz-al.ok{border-left-color:var(--gain)}
+.mz-al small{display:block;color:var(--muted);margin-top:2px}
+@media (max-width:420px){.mz-grid{grid-template-columns:1fr}}
+</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
@@ -178,7 +189,7 @@ textarea{font-family:var(--f-body);resize:vertical}
   <div>
     <span class="autor">A companion tool to the books by Marcus Deleon</span>
     <h1>Trade Note</h1>
-    <p class="sub">Run the numbers before you take a Forex or gold trade: spread, slippage, commission, swap, margin and leverage, laid out like a trade statement. Every cost here is an example; check your broker's real figures.</p>
+    <p class="sub">Run the numbers before you take a Forex or gold trade, and check your prop firm rules: spread, slippage, commission, swap, margin and leverage, laid out like a trade statement. Every cost here is an example; check your broker's real figures.</p>
   </div>
   <div class="tabs" role="tablist">
     <button class="tab" role="tab" aria-selected="true" data-tab="op">Trade</button>
@@ -186,6 +197,7 @@ textarea{font-family:var(--f-body);resize:vertical}
     <button class="tab" role="tab" aria-selected="false" data-tab="onde">Price context</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="cen">Scenarios</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="ex">Examples</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="mesa" id="tab-mesa">Prop firm</button>
   </div>
 </header>
 
@@ -315,6 +327,39 @@ textarea{font-family:var(--f-body);resize:vertical}
       <p class="note" style="margin-top:0">A complete trade for each instrument, with every tab filled in. Prices are made up. Loading an example replaces what is on screen; Undo brings it back.</p>
       <div class="exs" id="exs"></div>
     </div>
+
+    <div id="view-mesa" class="hide">
+      <div class="panel-head"><h2>Prop firm</h2></div>
+      <p class="note" style="margin-top:0">The math behind your firm's rules: how far the account can fall before it is closed, how much you can still lose today, how far you are from the profit target and whether one big day breaks the consistency rule. Copy the numbers from your firm's current rules: every firm uses different ones.</p>
+      <h3>Firm rules</h3>
+      <div class="mz-grid">
+        <label>Account size (US$)<input id="mz-conta" inputmode="decimal"></label>
+        <label>Max drawdown (US$)<input id="mz-dd" inputmode="decimal"></label>
+        <label>Drawdown type<select id="mz-tipo"><option value="estatico">Static (fixed at starting balance)</option><option value="movel">Trailing (moves up with the peak)</option></select></label>
+        <label>Daily loss limit (US$)<input id="mz-diario" inputmode="decimal" placeholder="0 = none"></label>
+        <label>Profit target (US$)<input id="mz-meta" inputmode="decimal"></label>
+        <label>Consistency: best day up to (% of profit)<input id="mz-consist" inputmode="decimal" placeholder="0 = none"></label>
+        <label class="full" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="mz-trava" style="width:auto"> Trailing drawdown stops rising once it reaches the starting balance</label>
+      </div>
+      <h3>Account status</h3>
+      <div class="mz-grid">
+        <label>Current balance (US$)<input id="mz-saldo" inputmode="decimal"></label>
+        <label>Highest balance so far (US$)<input id="mz-pico" inputmode="decimal"></label>
+        <label>Today's P&amp;L (US$)<input id="mz-hoje" inputmode="decimal" placeholder="negative if you lost"></label>
+        <label>Best day so far (US$)<input id="mz-melhor" inputmode="decimal"></label>
+      </div>
+      <h3>Position size</h3>
+      <div class="mz-grid">
+        <label>Contract<select id="mz-inst"><option value="MES">MES (Micro E-mini S&amp;P 500): $5 per point</option><option value="MNQ">MNQ (Micro E-mini Nasdaq-100): $2 per point</option><option value="M2K">M2K (Micro Russell 2000): $5 per point</option><option value="MGC">MGC (Micro Gold): $10 per point</option><option value="ES">ES (E-mini S&amp;P 500): $50 per point</option><option value="NQ">NQ (E-mini Nasdaq-100): $20 per point</option><option value="FX">Forex, standard lot: $10 per pip</option></select></label>
+        <label>Stop <small id="mz-un">(points)</small><input id="mz-stop" inputmode="decimal"></label>
+        <label>Round-turn commission per contract (US$)<input id="mz-com" inputmode="decimal"></label>
+        <label>Risk per trade (% of drawdown)<input id="mz-risco" inputmode="decimal"></label>
+      </div>
+      <h3>Result</h3>
+      <div class="kpis" id="mz-kpis"></div>
+      <div class="mz-alerts" id="mz-alerts" aria-live="polite"></div>
+      <p class="note">Educational tool, not affiliated with any prop firm. Rules change: always check your firm's current rules (drawdown on close or intraday, when the daily limit resets, how consistency is measured).</p>
+    </div>
   </section>
 </div>
 
@@ -322,9 +367,10 @@ textarea{font-family:var(--f-body);resize:vertical}
   <h2>The books</h2>
   <ul>
     <li><a href="https://www.amazon.com/s?k=Marcus+Deleon+Smart+Money+Trading+Journal" target="_blank" rel="noopener">Smart Money Trading Journal: Plan, Log and Review Every Trade</a></li>
+    <li><a href="https://www.amazon.com/s?k=Marcus+Deleon+Prop+Firm+Survival+Guide" target="_blank" rel="noopener">Prop Firm Survival Guide</a> · <a href="?book=propfirm">open the Prop firm tab</a></li>
     <li><a href="https://www.amazon.com/s?k=Marcus+Deleon+trading" target="_blank" rel="noopener">All books by Marcus Deleon on Amazon</a></li>
   </ul>
-  <p style="margin:0">Educational tool. It is not investment advice, does not recommend buying or selling any instrument and does not replace a licensed professional. Leveraged trading can lose more than your deposit. Spreads, swaps, margin and taxes change and vary by broker and country: always check your broker's statement and a tax adviser. Your numbers stay in your browser; nothing is sent anywhere. <a href="../">Versão em português</a>.</p>
+  <p style="margin:0">Educational tool. It is not investment advice, does not recommend buying or selling any instrument and does not replace a licensed professional. Not affiliated with any broker or prop firm: names of platforms and contracts appear only as references for the math. Leveraged trading can lose more than your deposit. Spreads, swaps, margin and taxes change and vary by broker and country: always check your broker's statement and a tax adviser. Your numbers stay in your browser; nothing is sent anywhere. <a href="../">Versão em português</a>.</p>
 </footer>
 </div>
 
@@ -640,9 +686,9 @@ $("cenSoRisco").addEventListener("change",()=>{S.cen.soRisco=$("cenSoRisco").che
 $("cenCopiar").addEventListener("click",()=>{const t=cenCSV(),b=$("cenCopiar"),ta=$("cen-csv");
   const fb=()=>{ta.value=t;ta.classList.remove("hide");ta.select();b.textContent="Selected: press Ctrl+C";};
   try{navigator.clipboard.writeText(t).then(()=>{b.textContent="Copied. Paste into a spreadsheet";setTimeout(()=>b.textContent="Copy table (for a spreadsheet)",2500);},fb);}catch(e){fb();}});
-function setTab(t){if(!["op","pm","onde","cen","ex"].includes(t))t="op";S.tab=t;save();
+function setTab(t){if(!["op","pm","onde","cen","ex","mesa"].includes(t))t="op";S.tab=t;save();
   document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab===t)));
-  ["op","pm","onde","cen","ex"].forEach(v=>$("view-"+v).classList.toggle("hide",t!==v));if(t==="cen")renderCen();}
+  ["op","pm","onde","cen","ex","mesa"].forEach(v=>$("view-"+v).classList.toggle("hide",t!==v));if(t==="cen")renderCen();}
 document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>setTab(b.dataset.tab)));
 
 let undoSnap=null,marcas={};
@@ -746,6 +792,79 @@ $("salvas-arq").addEventListener("change",async e=>{
   }catch(_){avisoS(ST.imp,ST.ruim);}
 });
 renderSalvas();
+
+/* ---------- prop firm ---------- */
+const MZ_INST={MES:{vp:5,un:"points"},MNQ:{vp:2,un:"points"},M2K:{vp:5,un:"points"},MGC:{vp:10,un:"points"},ES:{vp:50,un:"points"},NQ:{vp:20,un:"points"},FX:{vp:10,un:"pips"}};
+const MZ_IDS={"mz-conta":"conta","mz-dd":"dd","mz-tipo":"tipo","mz-diario":"diario","mz-meta":"meta","mz-consist":"consist","mz-saldo":"saldo","mz-pico":"pico","mz-hoje":"hoje","mz-melhor":"melhor","mz-inst":"inst","mz-stop":"stop","mz-com":"com","mz-risco":"risco"};
+function ensureMesa(){
+  const base={conta:"50000",dd:"2500",tipo:"movel",trava:true,diario:"1000",meta:"3000",consist:"40",saldo:"50000",pico:"50000",hoje:"0",melhor:"0",inst:"MES",stop:"8",com:"1.5",risco:"3"};
+  if(!S.mesa||typeof S.mesa!=="object")S.mesa={};
+  for(const k in base)if(S.mesa[k]===undefined)S.mesa[k]=base[k];
+  return S.mesa;
+}
+function calcMesa(){
+  const M=ensureMesa(), v=k=>{const x=num(M[k]);return Number.isFinite(x)?x:0;};
+  const conta=v("conta"), dd=v("dd"), saldo=v("saldo")||conta, pico=Math.max(v("pico"),saldo,conta), hoje=v("hoje"), diario=v("diario"), meta=v("meta"), c=v("consist")/100, melhor=Math.max(v("melhor"),hoje);
+  let piso=conta-dd;
+  if(M.tipo==="movel"){piso=pico-dd;if(M.trava)piso=Math.min(piso,conta);}
+  const dist=saldo-piso, lucro=saldo-conta;
+  const diarioRest=diario>0?diario+Math.min(hoje,0):Infinity;
+  const I=MZ_INST[M.inst]||MZ_INST.MES, stop=v("stop"), com=v("com");
+  const custo1=stop*I.vp+com;
+  const alvoRisco=dd*v("risco")/100;
+  const contratos=custo1>0?Math.floor(alvoRisco/custo1):0;
+  const riscoOp=Math.max(contratos,1)*custo1;
+  const stopsElim=riscoOp>0?Math.floor(dist/riscoOp):Infinity;
+  const stopsHoje=riscoOp>0&&Number.isFinite(diarioRest)?Math.floor(diarioRest/riscoOp):Infinity;
+  const falta=meta-lucro;
+  let consist=null;
+  if(c>0){
+    const necessario=melhor>0?melhor/c:0;
+    const p0=lucro-hoje;
+    consist={c,necessario,ok:lucro>0?melhor<=c*lucro+1e-9:true,maxHoje:p0>0?c*p0/(1-c):null,metaEfetiva:Math.max(meta,necessario)};
+  }
+  return {M,conta,dd,saldo,pico,hoje,diario,meta,melhor,piso,dist,lucro,diarioRest,I,stop,custo1,alvoRisco,contratos,riscoOp,stopsElim,stopsHoje,falta,consist};
+}
+function renderMesa(){
+  if(!$("view-mesa"))return;
+  const R=calcMesa(), M=R.M, act=document.activeElement;
+  Object.entries(MZ_IDS).forEach(([id,k])=>{const el=$(id);if(el&&el!==act)el.value=M[k]??"";});
+  $("mz-trava").checked=!!M.trava;$("mz-trava").closest("label").style.display=M.tipo==="movel"?"":"none";
+  $("mz-un").textContent="("+R.I.un+")";
+  const k=(t,val,d,cls)=>'<div class="kpi"><div class="k">'+t+'</div><div class="v '+(cls||"")+'">'+val+'</div>'+(d?'<div class="d">'+d+'</div>':"")+'</div>';
+  const fin=n=>Number.isFinite(n)?n:"no limit";
+  let h="";
+  h+=k("Account closed at",usd(R.piso),M.tipo==="movel"?"trailing: peak "+usd(R.pico)+" minus "+usd(R.dd)+(M.trava&&R.piso>=R.conta?" (locked at starting balance)":""):"static drawdown");
+  h+=k("Room before closure",usd(R.dist),nf(R.dd>0?R.dist/R.dd*100:0,0)+"% of the drawdown left",R.dist<=R.dd*.25?"loss":"");
+  h+=k("Can still lose today",Number.isFinite(R.diarioRest)?usd(R.diarioRest):"no daily limit",Number.isFinite(R.diarioRest)?"limit "+usd(R.diario)+(R.hoje<0?", already lost "+usd(-R.hoje):""):"",Number.isFinite(R.diarioRest)&&R.diarioRest<=R.riscoOp?"loss":"");
+  h+=k("Contracts by your rule",String(R.contratos),R.custo1>0?nf(num(M.risco)||0,1)+"% of drawdown = "+usd(R.alvoRisco)+"; 1 contract at the stop costs "+usd(R.custo1):"enter the stop",R.contratos<1?"loss":"");
+  h+=k("Stops in a row to closure",String(fin(R.stopsElim)),"with "+Math.max(R.contratos,1)+" contract(s): "+usd(R.riscoOp)+" per stop",R.stopsElim<5?"loss":"");
+  h+=k("Stops to today's limit",String(fin(R.stopsHoje)),"",Number.isFinite(R.stopsHoje)&&R.stopsHoje<2?"loss":"");
+  h+=k("Profit so far",usd(R.lucro),R.falta>0?usd(R.falta)+" to the "+usd(R.meta)+" target":usd(R.meta)+" target reached",R.lucro>=0?"gain":"loss");
+  if(R.consist)h+=k("Consistency",R.consist.ok?"within":"broken",R.melhor>0?"best day "+usd(R.melhor)+" needs total profit of "+usd(R.consist.necessario):"no winning day yet",R.consist.ok?"gain":"loss");
+  $("mz-kpis").innerHTML=h;
+  const A=[], al=(n,t,s)=>A.push('<div class="mz-al '+n+'">'+t+(s?"<small>"+s+"</small>":"")+"</div>");
+  const pctDD=R.dd>0?R.riscoOp/R.dd*100:0;
+  if(R.contratos<1&&R.custo1>0)al("alto","With a "+nf(R.stop,R.I.un==="pips"?1:2)+" "+R.I.un+" stop, not even 1 contract fits in "+nf(num(M.risco),1)+"% of the drawdown ("+usd(R.alvoRisco)+"). One contract risks "+usd(R.custo1)+", or "+nf(pctDD,1)+"% of the drawdown.","Options: a tighter stop, a smaller (micro) contract, or a bigger risk per trade, knowing it shortens the losing streak the account can survive.");
+  if(pctDD>5)al("medio","Each stop costs "+nf(pctDD,1)+"% of the drawdown. The book's starting range is 2% to 5% of the drawdown per trade.","At 20% of the drawdown per trade, 5 losses in a row close the account. Streaks like that happen even with good strategies.");
+  else if(R.contratos>=1&&pctDD<2)al("ok","Each stop costs "+nf(pctDD,1)+"% of the drawdown, below the book's 2% to 5% starting range: a conservative size that survives a long losing streak.");
+  else if(R.contratos>=1)al("ok","Each stop costs "+nf(pctDD,1)+"% of the drawdown, inside the book's 2% to 5% starting range.");
+  if(Number.isFinite(R.diarioRest)&&R.diarioRest<R.riscoOp)al("alto","What you can still lose today ("+usd(R.diarioRest)+") is less than one stop ("+usd(R.riscoOp)+"). One more trade at this size can break the daily limit.","At most firms, breaking the daily limit ends the day or closes the account. Check your firm's rules.");
+  if(R.dist<=0)al("alto","The balance is already at or below the closure level.","");
+  else if(R.dist<R.dd*.25)al("medio","Only "+usd(R.dist)+" left before closure, less than 25% of the drawdown.","With little room, each stop weighs more: a smaller size gives the account more stops to breathe.");
+  if(M.tipo==="movel"&&!(M.trava&&R.piso>=R.conta))al("info","Trailing drawdown: every new balance peak raises the closure level with it. Profit you give back also eats the drawdown.","Check whether your firm tracks the peak on trade close or intraday (tick by tick): the same result can pass at one firm and fail at another.");
+  if(R.consist){
+    if(!R.consist.ok)al("alto","Consistency rule broken: the best day ("+usd(R.melhor)+") is more than "+nf(R.consist.c*100,0)+"% of total profit ("+usd(R.lucro)+"). To comply again, total profit has to reach "+usd(R.consist.necessario)+".","In practice, your real target becomes "+usd(R.consist.metaEfetiva)+", not "+usd(R.meta)+".");
+    if(R.consist.maxHoje!=null)al("info","Today, making more than "+usd(R.consist.maxHoje)+" pushes this day above "+nf(R.consist.c*100,0)+"% of total profit.","That is why one great day can delay a payout: it raises the total profit you need.");
+  }
+  $("mz-alerts").innerHTML=A.join("");
+}
+ensureMesa();
+Object.entries(MZ_IDS).forEach(([id,k])=>{const el=$(id);el.addEventListener(el.tagName==="SELECT"?"change":"input",()=>{S.mesa[k]=el.value;save();renderMesa();});});
+$("mz-trava").addEventListener("change",()=>{S.mesa.trava=$("mz-trava").checked;save();renderMesa();});
+{ const rbMesa=render; render=function(){rbMesa.apply(this,arguments);try{renderMesa();}catch(e){}}; }
+try{const q=new URLSearchParams(location.search),b=q.get("book")||q.get("tab");if(b&&/^(propfirm|prop|mesa)$/i.test(b))S.tab="mesa";}catch(e){}
+window.__tradeNoteTest={calcWith,calcMesa,S:()=>S};
 fillInputs();setTab(S.tab);render();renderEx();syncClr();
 })();
 </script>
