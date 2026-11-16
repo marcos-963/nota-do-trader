@@ -1435,7 +1435,8 @@ async function preAtualizar(){
   ]);
   P.ultima=Date.now();save();renderPre();
   const h=new Date();
-  $("pre-status").textContent="Atualizado às "+p2(h.getHours())+":"+p2(h.getMinutes())+"."+(falhas.length?" Sem resposta de: "+falhas.join(", ")+". Digite esses valores.":"");
+  if(falhas.length>=4){const gh=location.hostname.endsWith("github.io");$("pre-status").innerHTML=gh?"Nenhuma fonte respondeu. Confira a internet e toque em Atualizar dados de novo, ou digite os valores.":"Nenhuma fonte respondeu. Esta versão da calculadora está aberta num lugar que não deixa a página buscar dados na internet (como dentro do Claude). Digite os valores, ou abra a <a href='https://marcos-963.github.io/nota-do-trader/?aba=pre' target='_blank' rel='noopener'>Edição do Leitor na aba Pre-market</a>, que busca tudo sozinha.";}
+  else $("pre-status").textContent="Atualizado às "+p2(h.getHours())+":"+p2(h.getMinutes())+"."+(falhas.length?" Sem resposta de: "+falhas.join(", ")+". Digite esses valores.":"");
   $("pre-atualizar").disabled=false;preBusy=false;
 }
 function preEventos(){
