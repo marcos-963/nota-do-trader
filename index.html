@@ -1420,7 +1420,7 @@ if($("view-mesa")){
 
 
 /* ---------- pre-market ---------- */
-function cotQ(s){if(!s||s.inst!=="FX")return 1;const c=num(s.cotUSD);return Number.isFinite(c)&&c>0?c:1;}
+function cotQ(s){if(!s||s.inst!=="FX")return 1;const c=num(s.cotUSD);if(Number.isFinite(c)&&c>0)return c;const par=String(s.par||"").toUpperCase();if(/USD$/.test(par))return 1;const p=s.pre||(typeof S!=="undefined"?S.pre:null);if(p&&par&&p.par===par&&p.parCot>0)return p.parCot;return 1;}
 const PRE_EV=[["payroll","Payroll (emprego nos EUA)","alto"],["cpi","CPI, inflação nos EUA","alto"],["fomc","FOMC, decisão de juros do Fed","alto"],["fed","Fala do presidente do Fed","medio"],["copom","Copom, decisão da Selic","alto"],["ipca","IPCA, inflação no Brasil","medio"],["bc","Leilão ou intervenção do BC no câmbio","medio"],["pib","PIB (EUA ou Brasil)","medio"],["outro1","","medio"],["outro2","","medio"]];
 const PRE_NGEO=7;
 const p2=n=>String(n).padStart(2,"0");
