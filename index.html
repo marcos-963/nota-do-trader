@@ -195,6 +195,30 @@ textarea{font-family:var(--f-body);resize:vertical}
 #print-img{display:block;width:100%;max-height:320px;object-fit:contain;border:1px solid var(--line);border-radius:8px;background:#000;cursor:zoom-in}
 #print-img.grande{max-height:none;cursor:zoom-out}
 #print-fig figcaption{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-top:6px;flex-wrap:wrap}
+.bx-modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-start;justify-content:center;padding:24px 16px;z-index:50;overflow:auto}
+.bx-card{width:min(440px,100%);background:#1b2129;color:#e8ecf1;border-radius:14px;padding:18px 18px 14px;box-shadow:0 12px 40px rgba(0,0,0,.45);font-size:14px}
+.bx-card h2{margin:0;font-size:20px;color:#fff;letter-spacing:0;text-transform:none}
+.bx-top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
+.bx-x{background:#2a323d;color:#fff;border:0;border-radius:50%;width:34px;height:34px;font-size:18px;cursor:pointer}
+.bx-ins{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;padding-bottom:10px;border-bottom:1px solid #2c3540}
+.bx-ins b{font-size:16px;color:#fff}.bx-ins small{display:block;color:#93a0ae;font-size:12px}
+.bx-badge{display:inline-block;font-size:11px;font-weight:700;border-radius:4px;padding:1px 6px;margin-left:6px}
+.bx-badge.c{background:#123d2a;color:#3ddc84}.bx-badge.v{background:#45191b;color:#ff6b6b}
+.bx-lado{display:flex;gap:6px;margin:10px 0}
+.bx-lado button{flex:1;border:1px solid #3a4553;background:#232b35;color:#c9d2dc;border-radius:8px;padding:7px;font-weight:700;cursor:pointer}
+.bx-lado button.on.c{background:#1f8a4c;border-color:#1f8a4c;color:#fff}.bx-lado button.on.v{background:#c7363d;border-color:#c7363d;color:#fff}
+.bx-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:11px 0;border-bottom:1px solid #2c3540}
+.bx-row .l{color:#c9d2dc}.bx-row .r{display:flex;align-items:center;gap:8px;font:600 16px var(--f-mono);color:#fff}
+.bx-cp{border:1px solid #3a4553;background:#232b35;color:#c9d2dc;border-radius:6px;font-size:11px;padding:3px 7px;cursor:pointer;font-family:inherit}
+.bx-cp.ok{border-color:#1f8a4c;color:#3ddc84}
+.bx-sub{margin:12px 0 2px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#93a0ae}
+.bx-ct{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+.bx-ct div{background:#232b35;border:1px solid #3a4553;border-radius:8px;padding:8px 10px;display:flex;justify-content:space-between;align-items:center;font:600 16px var(--f-mono);color:#fff}
+.bx-ct span.k{font:600 13px var(--f-sans,inherit);color:#c9d2dc}
+.bx-res{margin-top:12px;font-size:13px;color:#c9d2dc;line-height:1.5}
+.bx-al{margin-top:8px;border-radius:8px;padding:8px 10px;font-size:13px}
+.bx-al.alto{background:#45191b;color:#ffb3b3}.bx-al.medio{background:#3d3114;color:#f5d48b}.bx-al.ok{background:#123d2a;color:#9be8bf}.bx-al.info{background:#232b35;color:#c9d2dc}
+.bx-foot{margin-top:12px;font-size:11px;color:#93a0ae}
 .fix-log ul{margin:6px 0 0;padding-left:18px}
 .fix-log li{margin-bottom:3px}
 .fix-log .t{font:600 12px var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
@@ -290,6 +314,8 @@ textarea{font-family:var(--f-body);resize:vertical}
       <figure id="print-fig" class="hide"><img id="print-img" alt="Print do gráfico desta operação"><figcaption><span id="print-info"></span><span><button class="btn ghost small" type="button" id="print-trocar">Trocar</button> <button class="btn ghost small danger" type="button" id="print-apagar">Remover print</button></span></figcaption></figure>
       <p class="note" id="print-nota">O print fica guardado com a operação: entra no Salvar e no arquivo baixado. Fica só neste aparelho.</p>
     </div>
+    <div class="pre-row" id="bx-row" style="margin:6px 0 14px"><button class="btn" type="button" id="bx-abrir">Montar a ordem da XTB</button><span class="note" id="bx-msg" style="margin:0"></span></div>
+    <div class="bx-modal hide" id="bx-modal" role="dialog" aria-modal="true" aria-labelledby="bx-tit"><div class="bx-card" id="bx-card"></div></div>
     <h3>Execução</h3>
     <div class="fields">
       <label><span>Spread <small class="u-px">(pts)</small></span><input id="spread" inputmode="decimal"></label>
@@ -1591,6 +1617,70 @@ if($("print-box")){
   if(ap)ap.addEventListener("click",()=>setTimeout(()=>{if(!String(S.entrada||"").trim()&&S.print){S.print="";S.printEm=0;save();renderPrint();}},0));
   renderPrint();
   { const rbPrint=render; render=function(){rbPrint.apply(this,arguments);try{renderPrint();}catch(e){}}; }
+}
+
+
+/* ---------- boleta no estilo XTB ---------- */
+let bxLeitura=null;
+function bxPip(){const p=num(S.pip);return INFO[S.inst]&&INFO[S.inst].b3?1:(p>0?p:0.0001);}
+function bxDec(){if(S.inst==="XAU")return 2;const p=bxPip();return Math.max(0,Math.round(-Math.log10(p)))+1;}
+function bxCopiar(txt,btn){
+  const ok=()=>{btn.textContent="copiado";btn.classList.add("ok");setTimeout(()=>{btn.textContent="copiar";btn.classList.remove("ok");},1500);};
+  const alt=()=>{const t=document.createElement("textarea");t.value=txt;t.style.position="fixed";t.style.opacity="0";document.body.appendChild(t);t.select();try{document.execCommand("copy");ok();}catch(e){btn.textContent=txt;}t.remove();};
+  try{navigator.clipboard.writeText(txt).then(ok,alt);}catch(e){alt();}
+}
+function renderBoleta(){
+  const R=calc(), I=INFO[S.inst], c=S.lado==="C", pip=bxPip(), d=bxDec();
+  const par=(S.inst==="FX"?(S.par||"Forex"):I.nome);
+  const ent=num(S.entrada), stp=num(S.stop), alv=num(S.alvo), q=num(S.qtd);
+  const f=n=>Number.isFinite(n)?n.toFixed(d):"–";
+  const dS=Number.isFinite(ent)&&Number.isFinite(stp)?Math.abs(ent-stp)/pip:NaN, dA=Number.isFinite(ent)&&Number.isFinite(alv)?Math.abs(alv-ent)/pip:NaN;
+  const p1=n=>Number.isFinite(n)?(Math.floor(n*10+1e-6)/10).toFixed(1):"–";
+  const usd=num(S.usdbrl)>0?num(S.usdbrl):NaN;
+  const perda=-R.liquidoStop, ganho=R.liquidoAlvo;
+  const us=n=>Number.isFinite(n)&&usd>0?"US$ "+nf(n/usd,2):"";
+  const linha=(l,v,cp)=>'<div class="bx-row"><span class="l">'+l+'</span><span class="r">'+v+(cp!=null?' <button class="bx-cp" type="button" data-cp="'+cp+'">copiar</button>':"")+"</span></div>";
+  let h='<div class="bx-top"><h2 id="bx-tit">Nova ordem de mercado</h2><button class="bx-x" type="button" id="bx-fechar" aria-label="Fechar">×</button></div>';
+  h+='<div class="bx-ins"><div><b>'+par+'</b> <small style="display:inline">'+(S.inst==="FX"||S.inst==="XAU"?"CFD":"")+'</small><span class="bx-badge '+(c?"c":"v")+'">'+(c?"Comprar":"Vender")+'</span><small>'+(bxLeitura&&bxLeitura.tf?"lido do print · "+bxLeitura.tf:"montada com os números da aba Operação")+'</small></div><div style="text-align:right"><small>Preço planejado</small><b>'+f(ent)+'</b></div></div>';
+  h+='<div class="bx-lado"><button type="button" data-bxlado="C" class="c'+(c?" on":"")+'">Comprar</button><button type="button" data-bxlado="V" class="v'+(!c?" on":"")+'">Vender</button></div>';
+  h+=linha("Volume",nf(q,2).replace(",","."),nf(q,2).replace(",","."));
+  h+=linha("Take Profit",f(alv),f(alv));
+  h+=linha("Stop Loss",f(stp),f(stp));
+  h+='<div class="bx-sub">Click &amp; Trade (botão SL/TP da XTB, em pips)</div>';
+  h+='<div class="bx-ct"><div><span class="k">S/L</span>-'+p1(dS)+' <button class="bx-cp" type="button" data-cp="-'+p1(dS)+'">copiar</button></div><div><span class="k">T/P</span>'+p1(dA)+' <button class="bx-cp" type="button" data-cp="'+p1(dA)+'">copiar</button></div></div>';
+  h+='<div class="bx-res">Perda no stop: <b>'+brl(perda)+'</b> '+(us(perda)?"("+us(perda)+")":"")+'<br>Ganho no alvo: <b>'+brl(ganho)+'</b> '+(us(ganho)?"("+us(ganho)+")":"")+'<br>R:R líquido: <b>1 : '+(Number.isFinite(R.riscoRetorno)?nf(R.riscoRetorno,2):"–")+'</b> · '+(Number.isFinite(R.percCapitalNoStop)?nf(R.percCapitalNoStop,2)+"% da conta no stop":"")+'</div>';
+  const A=[], al=(n,t)=>A.push('<div class="bx-al '+n+'">'+t+"</div>");
+  const spr=num(S.spread)||0;
+  if(I.b3)al("alto","A XTB não negocia "+I.nome+". Esta boleta serve para Forex e ouro.");
+  if(!Number.isFinite(ent)||!Number.isFinite(stp)||!Number.isFinite(alv))al("alto","Faltam entrada, stop ou alvo. Toque em Enviar e corrigir na aba Operação, ou preencha os campos.");
+  else{
+    if(c?!(stp<ent&&alv>ent):!(stp>ent&&alv<ent))al("alto","Stop ou alvo do lado errado para uma "+(c?"compra":"venda")+".");
+    else if(dS<=spr)al("alto","Stop Loss inválido na XTB: o stop está a "+p1(dS)+" pips e o spread é de "+nf(spr,1)+". Afaste o stop.");
+    else if(dS<spr*3)al("medio","Stop de "+p1(dS)+" pips com spread de "+nf(spr,1)+": o custo pesa muito e o stop pode ser pego pelo ruído.");
+    else al("ok","Ordem coerente com a sua regra: confira os números na boleta da XTB antes de confirmar.");
+  }
+  if(S.inst==="FX"&&bxLeitura&&bxLeitura.aviso)al("medio",bxLeitura.aviso);
+  if(bxLeitura&&(bxLeitura.min||bxLeitura.max))al("info","No print: mínima visível "+(bxLeitura.min?f(bxLeitura.min):"–")+" · máxima visível "+(bxLeitura.max?f(bxLeitura.max):"–")+". O stop acima vem da sua regra de risco, não do gráfico: veja se ele fica num lugar que faz sentido para a sua ideia.");
+  h+=A.join("");
+  h+='<div class="bx-foot">A distância do Click &amp; Trade conta a partir do preço em que a ordem for executada. Os preços acima usam a entrada planejada: se o preço andar, ajuste. Ferramenta educativa, não indica compra ou venda.</div>';
+  $("bx-card").innerHTML=h;
+}
+function bxAbrir(){renderBoleta();$("bx-modal").classList.remove("hide");setTimeout(()=>{const b=$("bx-fechar");b&&b.focus();},0);}
+function bxFechar(){$("bx-modal").classList.add("hide");}
+function bxRefazer(){ // recalcula stop e alvo pela regra a partir da entrada atual
+  S.stop="";S.alvo="";runFix("completo");
+}
+if($("bx-modal")){
+  $("bx-abrir").addEventListener("click",()=>{if(!String(S.stop||"").trim()||!String(S.alvo||"").trim())runFix("completo");bxAbrir();});
+  $("bx-modal").addEventListener("click",e=>{
+    if(e.target===$("bx-modal")||e.target.id==="bx-fechar"){bxFechar();return;}
+    const cp=e.target.closest&&e.target.closest("[data-cp]");if(cp){bxCopiar(cp.dataset.cp,cp);return;}
+    const ld=e.target.closest&&e.target.closest("[data-bxlado]");
+    if(ld&&ld.dataset.bxlado!==S.lado){S.lado=ld.dataset.bxlado;
+      if(bxLeitura&&bxLeitura.compra&&bxLeitura.venda)S.entrada=String(S.lado==="C"?bxLeitura.compra:bxLeitura.venda);
+      bxRefazer();renderBoleta();}
+  });
+  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("bx-modal").classList.contains("hide"))bxFechar();});
 }
 
 /* ---------- salvar operações ---------- */
