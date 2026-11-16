@@ -291,8 +291,10 @@ textarea{font-family:var(--f-body);resize:vertical}
           <option value="WIN">WIN · Mini índice (B3)</option>
           <option value="FX">Forex · EUR/USD e pares com USD cotado</option>
           <option value="XAU">Ouro · XAU/USD</option>
+          <option value="CFD">Índice ou ação · CFD na XTB (US100, US500, NVIDIA…)</option>
         </select>
       </label>
+      <label class="full hide" id="cfd-lb">Qual CFD<select id="cfd"><option value="US100">US100 · Nasdaq 100</option><option value="US500">US500 · S&P 500</option><option value="US30">US30 · Dow Jones</option><option value="NVDA">NVIDIA · CFD de ação</option><option value="OUTRO">Outro: digito o valor por ponto</option></select><span class="pre-src" id="cfd-src"></span></label>
       <div class="full" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <label>Lado<div class="seg side" id="lado"><button type="button" data-v="C">Compra</button><button type="button" data-v="V">Venda</button></div></label>
         <label>Modalidade<div class="seg" id="modo"><button type="button" data-v="day">Day trade</button><button type="button" data-v="swing">Swing</button></div></label>
@@ -567,13 +569,15 @@ const PRESETS={
   WDO:{qtd:"1",entrada:"5480",stop:"5470",alvo:"5500",spread:"0,5",slip:"0,5",corret:"0",emol:"1,10",margem:"150",dias:"0"},
   WIN:{qtd:"1",entrada:"130000",stop:"129800",alvo:"130400",spread:"5",slip:"5",corret:"0",emol:"0,30",margem:"100",dias:"0"},
   FX:{qtd:"0,01",entrada:"1.0850",stop:"1.0830",alvo:"1.0890",spread:"1",slip:"0,2",comissao:"7",alav:"100",swap:"-6",noites:"0",contrato:"100000",pip:"0.0001",cotUSD:"1"},
-  XAU:{qtd:"0,01",entrada:"4000",stop:"3990",alvo:"4020",spread:"3",slip:"2",comissao:"7",alav:"100",swap:"-30",noites:"0",contrato:"100",pip:"0.1"}
+  XAU:{qtd:"0,01",entrada:"4000",stop:"3990",alvo:"4020",spread:"3",slip:"2",comissao:"7",alav:"100",swap:"-30",noites:"0",contrato:"100",pip:"0.1"},
+  CFD:{qtd:"0,01",entrada:"25000",stop:"24950",alvo:"25100",spread:"1",slip:"1",comissao:"0",alav:"20",swap:"0",noites:"0",contrato:"20",pip:"1",cotUSD:"1",cfd:"US100",cfdPip:"1"}
 };
 const CEN={
   WDO:{stopDe:"3",stopAte:"30",stopPasso:"1",alvos:"1; 1,5; 2; 3",qtds:"1; 2; 3"},
   WIN:{stopDe:"50",stopAte:"500",stopPasso:"25",alvos:"1; 1,5; 2; 3",qtds:"1; 2; 5"},
   FX:{stopDe:"5",stopAte:"60",stopPasso:"5",alvos:"1; 1,5; 2; 3",qtds:"0,01; 0,05; 0,1"},
-  XAU:{stopDe:"20",stopAte:"300",stopPasso:"20",alvos:"1; 1,5; 2; 3",qtds:"0,01; 0,02; 0,05"}
+  XAU:{stopDe:"20",stopAte:"300",stopPasso:"20",alvos:"1; 1,5; 2; 3",qtds:"0,01; 0,02; 0,05"},
+  CFD:{stopDe:"10",stopAte:"150",stopPasso:"10",alvos:"1; 1,5; 2; 3",qtds:"0,01; 0,05; 0,1"}
 };
 /* exemplos completos, um por ativo — números fictícios, só para mostrar como a calculadora funciona */
 const EXEMPLOS=[
@@ -610,7 +614,8 @@ const INFO={
   WDO:{nome:"WDO (mini dólar)",dec:1,un:"pts",mult:()=>10,b3:true},
   WIN:{nome:"WIN (mini índice)",dec:0,un:"pts",mult:()=>0.2,b3:true},
   FX:{nome:"Forex",dec:5,un:"pips",b3:false},
-  XAU:{nome:"Ouro XAU/USD",dec:2,un:"pips",b3:false}
+  XAU:{nome:"Ouro XAU/USD",dec:2,un:"pips",b3:false},
+  CFD:{nome:"CFD de índice ou ação",dec:2,un:"pts",b3:false}
 };
 const TEXT_IDS=["qtd","capital","entrada","stop","alvo","riscoPct","spread","slip","corret","emol","margem","dias","comissao","alav","swap","noites","contrato","pip","usdbrl","cotUSD","pmAtual","oMax","oMin","oAtual","oMedia","oAtr"];
 
@@ -647,7 +652,7 @@ const ONDE_KEYS=["oMax","oMin","oAtual","oMedia","oAtr"];
 /* ---------- corretor automático ----------
    nivel "leve": formato, escala (ponto de milhar), tick, quantidade, sinais, vazios
    nivel "completo": também lado do stop/alvo, máxima/mínima trocadas, média/ATR de outro print */
-const TICK={WDO:.5,WIN:5,FX:.00001,XAU:.01};
+const TICK={WDO:.5,WIN:5,FX:.00001,XAU:.01,CFD:.01};
 function corrigir(nivel){
   // -1) preço de outro ativo: 123400 no WDO é preço de WIN; troca o ativo e mantém o que a pessoa digitou
   let trocaMsg=null;
@@ -667,7 +672,7 @@ function corrigir(nivel){
       }
     }
   }
-  const I=INFO[S.inst], P=PRESETS[S.inst], log=[], dec=S.inst==="FX"?5:S.inst==="XAU"?2:S.inst==="WDO"?1:0;
+  const I=INFO[S.inst], P=PRESETS[S.inst], log=[], dec=S.inst==="FX"?5:S.inst==="XAU"||S.inst==="CFD"?2:S.inst==="WDO"?1:0;
   const fmt=v=>String(Math.round(v*1e6)/1e6).replace(".",",");
   const campos={}; log.campos=campos;
   const note=(k,msg)=>{log.push(msg);campos[k]=campos[k]?campos[k]+" "+msg:msg;};
@@ -681,7 +686,7 @@ function corrigir(nivel){
   // 0) autocompletar: entrada, stop e alvo vazios saem das regras da própria pessoa (risco por trade e R:R mínimo)
   if(nivel==="completo"&&["entrada","stop","alvo"].some(k=>!Number.isFinite(num(S[k])))){
     const Mn=(S.mentor&&typeof S.mentor==="object")?S.mentor:{}, nv=Mn.nivel||"inter", explica=nv!=="avanc";
-    const dir=S.lado==="V"?-1:1, un=I.b3?" pts":" pips", pu=I.b3?1:num(S.pip)||num(P.pip);
+    const dir=S.lado==="V"?-1:1, un=" "+I.un, pu=I.b3?1:num(S.pip)||num(P.pip);
     const dist=d=>nf(d/pu,I.b3?(S.inst==="WDO"?1:0):1)+un;
     // custos e regras vazios primeiro, porque a conta do stop depende deles
     (I.b3?["spread","slip","corret","emol","margem","dias"]:["spread","slip","comissao","alav","noites"]).forEach(k=>{if(k==="dias"&&S.modo==="swing")return;if(!Number.isFinite(num(S[k])))put(k,num(P[k]),NOMES[k]+": estava vazio, preenchido com a referência "+fmt(num(P[k]))+" (confira na sua corretora).");});
@@ -771,8 +776,8 @@ function corrigir(nivel){
     if(!Number.isFinite(u)||u<=0){if(nivel==="completo")put("usdbrl",5.5,"Dólar: estava vazio, preenchido com 5,50 (confira a cotação do dia).");}
     else if(u>20||u<1){let t=u;for(let k=-4;k<=4;k++){const c=u*Math.pow(10,k);if(c>=3&&c<=9){t=c;break;}}if(t!==u)put("usdbrl",t,"Dólar: "+S.usdbrl+" fora de escala, ajustado para "+nf(t,2)+".");}
     const c=num(S.contrato), pp=num(S.pip);
-    if(nivel==="completo"&&c!==num(P.contrato))put("contrato",num(P.contrato),"Tamanho do contrato: "+(S.contrato||"vazio")+" não é o padrão de "+I.nome+". Voltou para "+P.contrato+" (confira na sua corretora).");
-    if(nivel==="completo"&&pp!==num(P.pip))put("pip",num(P.pip),"Tamanho do pip: "+(S.pip||"vazio")+" não é o padrão de "+I.nome+". Voltou para "+P.pip+".");
+    if(nivel==="completo"&&S.inst!=="CFD"&&c!==num(P.contrato))put("contrato",num(P.contrato),"Tamanho do contrato: "+(S.contrato||"vazio")+" não é o padrão de "+I.nome+". Voltou para "+P.contrato+" (confira na sua corretora).");
+    if(nivel==="completo"&&S.inst!=="CFD"&&pp!==num(P.pip))put("pip",num(P.pip),"Tamanho do pip: "+(S.pip||"vazio")+" não é o padrão de "+I.nome+". Voltou para "+P.pip+".");
     const sw=num(S.swap);if(!Number.isFinite(sw)&&nivel==="completo")put("swap",num(P.swap),"Swap: estava vazio, preenchido com exemplo "+P.swap+".");
     const al=num(S.alav);if(al>0&&al<1)put("alav",1/al,"Alavancagem: escrita como fração, convertida para 1:"+nf(1/al,0)+".");
   }
@@ -1243,7 +1248,7 @@ function mentorAlertas(){
   if(!String(M.tese).trim())al("medio","Falta escrever por que você quer entrar.","Escrever o motivo antes evita entrar por impulso e deixa a revisão possível depois.");
   if(!String(M.inval).trim())al("medio","Falta dizer onde a ideia fica errada.","O stop deve ficar onde a leitura deixa de valer, não só num valor em reais que dá para perder.");
   const mk=marcados(), LL=checklistAtual(), ok=mk.filter(Boolean).length;
-  const R2=calc(), fp=v=>Number.isFinite(v)?nf(v,I.dec):"–", un=I.b3?" pts":" pips";
+  const R2=calc(), fp=v=>Number.isFinite(v)?nf(v,I.dec):"–", un=" "+I.un;
   const sub=s=>String(s).replace(/\{stop\}/g,fp(st)).replace(/\{alvo\}/g,fp(alv)).replace(/\{entrada\}/g,fp(ent))
     .replace(/\{perda\}/g,brl(Math.abs(R2.liquidoStop))).replace(/\{dAlvo\}/g,nf(R2.pontosAteAlvo,I.b3?0:1)+un).replace(/\{rr\}/g,nf(R2.riscoRetorno,2));
   if(M.metodo==="msm"&&!M.custom.msm&&mk.length===11){
@@ -1623,15 +1628,15 @@ if($("print-box")){
 /* ---------- boleta no estilo XTB ---------- */
 let bxLeitura=null;
 function bxPip(){const p=num(S.pip);return INFO[S.inst]&&INFO[S.inst].b3?1:(p>0?p:0.0001);}
-function bxDec(){if(S.inst==="XAU")return 2;const p=bxPip();return Math.max(0,Math.round(-Math.log10(p)))+1;}
+function bxDec(){if(S.inst==="XAU"||S.inst==="CFD")return 2;const p=bxPip();return Math.max(0,Math.round(-Math.log10(p)))+1;}
 function bxCopiar(txt,btn){
   const ok=()=>{btn.textContent="copiado";btn.classList.add("ok");setTimeout(()=>{btn.textContent="copiar";btn.classList.remove("ok");},1500);};
   const alt=()=>{const t=document.createElement("textarea");t.value=txt;t.style.position="fixed";t.style.opacity="0";document.body.appendChild(t);t.select();try{document.execCommand("copy");ok();}catch(e){btn.textContent=txt;}t.remove();};
   try{navigator.clipboard.writeText(txt).then(ok,alt);}catch(e){alt();}
 }
 function renderBoleta(){
-  const R=calc(), I=INFO[S.inst], c=S.lado==="C", pip=bxPip(), d=bxDec();
-  const par=(S.inst==="FX"?(S.par||"Forex"):I.nome);
+  const R=calc(), I=INFO[S.inst], c=S.lado==="C", pip=S.inst==="CFD"&&num(S.cfdPip)>0?num(S.cfdPip):bxPip(), d=bxDec();
+  const par=(S.inst==="FX"?(S.par||"Forex"):S.inst==="CFD"?((CFD_AT[S.cfd]||{}).tk||"CFD"):I.nome);
   const ent=num(S.entrada), stp=num(S.stop), alv=num(S.alvo), q=num(S.qtd);
   const f=n=>Number.isFinite(n)?n.toFixed(d):"–";
   const dS=Number.isFinite(ent)&&Number.isFinite(stp)?Math.abs(ent-stp)/pip:NaN, dA=Number.isFinite(ent)&&Number.isFinite(alv)?Math.abs(alv-ent)/pip:NaN;
@@ -1641,7 +1646,7 @@ function renderBoleta(){
   const us=n=>Number.isFinite(n)&&usd>0?"US$ "+nf(n/usd,2):"";
   const linha=(l,v,cp)=>'<div class="bx-row"><span class="l">'+l+'</span><span class="r">'+v+(cp!=null?' <button class="bx-cp" type="button" data-cp="'+cp+'">copiar</button>':"")+"</span></div>";
   let h='<div class="bx-top"><h2 id="bx-tit">Nova ordem de mercado</h2><button class="bx-x" type="button" id="bx-fechar" aria-label="Fechar">×</button></div>';
-  h+='<div class="bx-ins"><div><b>'+par+'</b> <small style="display:inline">'+(S.inst==="FX"||S.inst==="XAU"?"CFD":"")+'</small><span class="bx-badge '+(c?"c":"v")+'">'+(c?"Comprar":"Vender")+'</span><small>'+(bxLeitura&&bxLeitura.tf?"lido do print · "+bxLeitura.tf:"montada com os números da aba Operação")+'</small></div><div style="text-align:right"><small>Preço planejado</small><b>'+f(ent)+'</b></div></div>';
+  h+='<div class="bx-ins"><div><b>'+par+'</b> <small style="display:inline">'+(I.b3?"":"CFD")+'</small><span class="bx-badge '+(c?"c":"v")+'">'+(c?"Comprar":"Vender")+'</span><small>'+(bxLeitura&&bxLeitura.tf?"lido do print · "+bxLeitura.tf:"montada com os números da aba Operação")+'</small></div><div style="text-align:right"><small>Preço planejado</small><b>'+f(ent)+'</b></div></div>';
   h+='<div class="bx-lado"><button type="button" data-bxlado="C" class="c'+(c?" on":"")+'">Comprar</button><button type="button" data-bxlado="V" class="v'+(!c?" on":"")+'">Vender</button></div>';
   h+=linha("Volume",nf(q,2).replace(",","."),nf(q,2).replace(",","."));
   h+=linha("Take Profit",f(alv),f(alv));
@@ -1650,15 +1655,16 @@ function renderBoleta(){
   h+='<div class="bx-ct"><div><span class="k">S/L</span>-'+p1(dS)+' <button class="bx-cp" type="button" data-cp="-'+p1(dS)+'">copiar</button></div><div><span class="k">T/P</span>'+p1(dA)+' <button class="bx-cp" type="button" data-cp="'+p1(dA)+'">copiar</button></div></div>';
   h+='<div class="bx-res">Perda no stop: <b>'+brl(perda)+'</b> '+(us(perda)?"("+us(perda)+")":"")+'<br>Ganho no alvo: <b>'+brl(ganho)+'</b> '+(us(ganho)?"("+us(ganho)+")":"")+'<br>R:R líquido: <b>1 : '+(Number.isFinite(R.riscoRetorno)?nf(R.riscoRetorno,2):"–")+'</b> · '+(Number.isFinite(R.percCapitalNoStop)?nf(R.percCapitalNoStop,2)+"% da conta no stop":"")+'</div>';
   const A=[], al=(n,t)=>A.push('<div class="bx-al '+n+'">'+t+"</div>");
-  const spr=num(S.spread)||0;
+  const spr=(num(S.spread)||0)*bxPip()/pip;
   if(I.b3)al("alto","A XTB não negocia "+I.nome+". Esta boleta serve para Forex e ouro.");
   if(!Number.isFinite(ent)||!Number.isFinite(stp)||!Number.isFinite(alv))al("alto","Faltam entrada, stop ou alvo. Toque em Enviar e corrigir na aba Operação, ou preencha os campos.");
   else{
     if(c?!(stp<ent&&alv>ent):!(stp>ent&&alv<ent))al("alto","Stop ou alvo do lado errado para uma "+(c?"compra":"venda")+".");
-    else if(dS<=spr)al("alto","Stop Loss inválido na XTB: o stop está a "+p1(dS)+" pips e o spread é de "+nf(spr,1)+". Afaste o stop.");
+    else if(Number.isFinite(dS)&&dS<=spr)al("alto","Stop Loss inválido na XTB: o stop está a "+p1(dS)+" pips e o spread é de "+nf(spr,1)+". Afaste o stop.");
     else if(dS<spr*3)al("medio","Stop de "+p1(dS)+" pips com spread de "+nf(spr,1)+": o custo pesa muito e o stop pode ser pego pelo ruído.");
     else al("ok","Ordem coerente com a sua regra: confira os números na boleta da XTB antes de confirmar.");
   }
+  if(S.inst==="CFD")al("info",num(S.cfdPip)>0?"No Click & Trade da XTB, 1 pip de "+((CFD_AT[S.cfd]||{}).tk||"")+" = "+nf(num(S.cfdPip),num(S.cfdPip)<1?1:0)+" ponto. S/L e T/P acima já estão nessa unidade.":"Para este CFD, confira no (i) da xStation o tamanho do pip antes de usar o Click & Trade. Os preços de Stop Loss e Take Profit acima valem do mesmo jeito.");
   if(S.inst==="FX"&&bxLeitura&&bxLeitura.aviso)al("medio",bxLeitura.aviso);
   if(bxLeitura&&(bxLeitura.min||bxLeitura.max))al("info","No print: mínima visível "+(bxLeitura.min?f(bxLeitura.min):"–")+" · máxima visível "+(bxLeitura.max?f(bxLeitura.max):"–")+". O stop acima vem da sua regra de risco, não do gráfico: veja se ele fica num lugar que faz sentido para a sua ideia.");
   h+=A.join("");
@@ -1681,6 +1687,33 @@ if($("bx-modal")){
       bxRefazer();renderBoleta();}
   });
   document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("bx-modal").classList.contains("hide"))bxFechar();});
+}
+
+
+/* ---------- CFD na XTB (índices e ações) ---------- */
+const CFD_AT={"US100":{"tk":"US100","n":"US100 · Nasdaq 100","vp":"20","xp":"1","spread":"1","alav":"20","ent":"25000","nota":"US$ 20 por ponto por lote; 1 pip da XTB = 1 ponto."},"US500":{"tk":"US500","n":"US500 · S&P 500","vp":"50","xp":"0.1","spread":"0,5","alav":"20","ent":"6800","nota":"US$ 50 por ponto por lote; 1 pip da XTB = 0,1 ponto."},"US30":{"tk":"US30","n":"US30 · Dow Jones","vp":"5","xp":"1","spread":"3","alav":"20","ent":"47000","nota":"US$ 5 por ponto por lote; 1 pip da XTB = 1 ponto."},"NVDA":{"tk":"NVDA.US","n":"NVIDIA · CFD de ação","vp":"1","xp":"","spread":"0,3","alav":"5","ent":"161.78","nota":"1 lote = 1 ação: US$ 1 por US$ 1 de movimento. Confira no (i) da xStation."},"OUTRO":{"tk":"CFD","n":"Outro: digito o valor por ponto","vp":"","xp":"","spread":"","alav":"","ent":"","nota":"Copie do (i) da xStation o valor nominal de 1 lote (ex.: nível × 20 USD = US$ 20 por ponto)."}};
+function cfdSet(k,comExemplo){
+  const a=CFD_AT[k]||CFD_AT.OUTRO;S.cfd=k;S.cfdPip=a.xp;
+  if(a.vp)S.contrato=a.vp;else if(k==="OUTRO")S.contrato="";
+  if(a.spread)S.spread=a.spread;if(a.alav)S.alav=a.alav;S.pip="1";S.cotUSD="1";
+  if(comExemplo){S.entrada=a.ent||"";S.stop="";S.alvo="";}
+}
+const CFD_LB={};
+function cfdUI(){
+  if(!$("cfd-lb"))return;
+  const cf=S.inst==="CFD";
+  $("cfd-lb").classList.toggle("hide",!cf);
+  if(cf){if(!CFD_AT[S.cfd])S.cfd="US100";if(document.activeElement!==$("cfd"))$("cfd").value=S.cfd;$("cfd-src").textContent=CFD_AT[S.cfd].nota;}
+  const lab=(id,txt)=>{const el=$(id);if(!el)return;const l=el.closest("label");if(!l)return;const n=[...l.childNodes].find(x=>x.nodeType===3&&x.nodeValue.trim());if(!n)return;if(!(id in CFD_LB))CFD_LB[id]=n.nodeValue;n.nodeValue=cf?txt:CFD_LB[id];};
+  lab("contrato","Valor de 1 ponto por lote (US$)");
+  lab("comissao","Comissão (US$ por lote, ida e volta)");
+  ["pip","cotUSD"].forEach(id=>{const el=$(id);if(el&&el.closest("label"))el.closest("label").classList.toggle("hide",cf);});
+  const h=document.querySelector(".fx h3");if(h){if(!CFD_LB.h3)CFD_LB.h3=h.textContent;h.textContent=cf?"Custos do CFD (confira no (i) da xStation)":CFD_LB.h3;}
+}
+if($("cfd")){
+  $("cfd").addEventListener("change",()=>{cfdSet($("cfd").value,true);save();fillInputs();render();if(S.entrada)runFix("completo");});
+  cfdUI();
+  { const rbCfd=render; render=function(){rbCfd.apply(this,arguments);try{cfdUI();}catch(e){}}; }
 }
 
 /* ---------- salvar operações ---------- */
