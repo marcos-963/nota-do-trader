@@ -189,6 +189,12 @@ textarea{font-family:var(--f-body);resize:vertical}
 .pre-geo label{flex-direction:row;align-items:center;gap:8px}
 .pre-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
 @media (max-width:420px){.pre-ev{grid-template-columns:auto 1fr 84px}.pre-ev .imp{grid-column:2/-1}}
+.print-drop{border:1.5px dashed var(--line);border-radius:8px;padding:14px;text-align:center;font-size:13px;color:var(--muted);background:var(--bg);cursor:pointer}
+.print-drop:focus,.print-drop.over{outline:none;border-color:var(--gain);color:var(--ink)}
+#print-fig{margin:0}
+#print-img{display:block;width:100%;max-height:320px;object-fit:contain;border:1px solid var(--line);border-radius:8px;background:#000;cursor:zoom-in}
+#print-img.grande{max-height:none;cursor:zoom-out}
+#print-fig figcaption{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-top:6px;flex-wrap:wrap}
 .fix-log ul{margin:6px 0 0;padding-left:18px}
 .fix-log li{margin-bottom:3px}
 .fix-log .t{font:600 12px var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
@@ -306,6 +312,14 @@ textarea{font-family:var(--f-body);resize:vertical}
       </div>
     </div>
     <p class="note">Números com vírgula ou ponto: <span class="num">5480,5</span> ou <span class="num">1.0850</span>. Os valores iniciais são exemplos.</p>
+
+    <div id="print-box" style="margin-top:14px">
+      <h3>Print do gráfico</h3>
+      <div class="print-drop" id="print-drop" tabindex="0" role="button" aria-label="Colar ou escolher o print do gráfico">Cole aqui o print do gráfico (Ctrl+V), arraste a imagem ou toque para escolher o arquivo</div>
+      <input type="file" id="print-file" accept="image/*" class="hide">
+      <figure id="print-fig" class="hide"><img id="print-img" alt="Print do gráfico desta operação"><figcaption><span id="print-info"></span><span><button class="btn ghost small" type="button" id="print-trocar">Trocar</button> <button class="btn ghost small danger" type="button" id="print-apagar">Tirar print</button></span></figcaption></figure>
+      <p class="note" id="print-nota">O print fica guardado com a operação: entra no Salvar e no arquivo baixado. Fica só neste aparelho.</p>
+    </div>
   </section>
 
   <!-- COLUNA 2: resultados -->
@@ -1511,6 +1525,54 @@ if($("view-pre")){
   try{const ab=new URLSearchParams(location.search).get("aba");if(ab&&/^pre/i.test(ab)){setTab("pre");if(Date.now()-ensurePre().ultima>15*60e3)preAtualizar();}}catch(e){}
 }
 
+
+/* ---------- print do gráfico ---------- */
+const PRINT_KEY="nota-trader-leitor-v1";
+function printComprimir(file){return new Promise((ok,no)=>{const u=URL.createObjectURL(file);const im=new Image();
+  im.onload=()=>{const W=Math.min(1200,im.naturalWidth||1200),H=Math.max(1,Math.round((im.naturalHeight||800)*W/(im.naturalWidth||1200)));const c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");x.fillStyle="#000";x.fillRect(0,0,W,H);x.drawImage(im,0,0,W,H);URL.revokeObjectURL(u);
+    let q=.72,d=c.toDataURL("image/jpeg",q);while(d.length>230000&&q>.36){q-=.12;d=c.toDataURL("image/jpeg",q);}ok(d);};
+  im.onerror=()=>{URL.revokeObjectURL(u);no(new Error("img"));};im.src=u;});}
+function printBlob(){try{if(!S.print)return null;const [h,b]=S.print.split(",");const bin=atob(b), a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return new File([a],"print-do-grafico.jpg",{type:(h.match(/data:([^;]+)/)||[])[1]||"image/jpeg"});}catch(e){return null;}}
+function renderPrint(){
+  if(!$("print-box"))return;
+  const tem=!!S.print;
+  $("print-fig").classList.toggle("hide",!tem);$("print-drop").classList.toggle("hide",tem);
+  if(tem){if($("print-img").getAttribute("src")!==S.print)$("print-img").src=S.print;
+    const d=S.printEm?new Date(S.printEm):null;$("print-info").textContent="Print de "+(d?d.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"})+" às "+d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}):"antes")+" · "+Math.round(S.print.length*0.75/1024)+" KB";}
+  else $("print-img").removeAttribute("src");
+}
+async function printReceber(file){
+  if(!file||!/^image\//.test(file.type))return;
+  $("print-nota").textContent="Preparando o print…";
+  try{S.print=await printComprimir(file);S.printEm=Date.now();save();
+    let ok=false;try{ok=(localStorage.getItem(PRINT_KEY)||"").includes(String(S.printEm));}catch(e){}
+    $("print-nota").textContent=ok?"Print guardado com esta operação. Ele entra no Salvar e no arquivo baixado.":"O print aparece aqui, mas não coube na memória deste navegador: ele some ao fechar a página. Baixe as operações salvas e apague as antigas para liberar espaço.";
+  }catch(e){$("print-nota").textContent="Não deu para abrir essa imagem. Tente outro print (PNG ou JPG).";}
+  renderPrint();
+}
+if($("print-box")){
+  const dz=$("print-drop");
+  dz.addEventListener("click",()=>$("print-file").click());
+  dz.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();$("print-file").click();}});
+  $("print-trocar").addEventListener("click",()=>$("print-file").click());
+  $("print-file").addEventListener("change",e=>{const f=e.target.files&&e.target.files[0];e.target.value="";printReceber(f);});
+  ["dragenter","dragover"].forEach(t=>dz.addEventListener(t,e=>{e.preventDefault();dz.classList.add("over");}));
+  ["dragleave","drop"].forEach(t=>dz.addEventListener(t,()=>dz.classList.remove("over")));
+  dz.addEventListener("drop",e=>{e.preventDefault();const f=[...(e.dataTransfer&&e.dataTransfer.files||[])].find(x=>/^image\//.test(x.type));printReceber(f);});
+  document.addEventListener("paste",e=>{
+    if((S.tab||"op")!=="op")return;
+    const t=e.target;if(t&&t.closest&&t.closest("#chat,#mentor,#view-pre"))return;
+    const it=[...(e.clipboardData&&e.clipboardData.items||[])].find(i=>i.kind==="file"&&/^image\//.test(i.type));
+    if(it)printReceber(it.getAsFile());
+  });
+  $("print-apagar").addEventListener("click",()=>{if(!confirm("Tirar o print desta operação?"))return;S.print="";S.printEm=0;save();$("print-nota").textContent="Print tirado. Cole outro quando quiser.";renderPrint();});
+  $("print-img").addEventListener("click",()=>$("print-img").classList.toggle("grande"));
+  const ap=document.querySelector('[data-apagar="op"]');
+  if(ap)ap.addEventListener("click",()=>setTimeout(()=>{if(!String(S.entrada||"").trim()&&S.print){S.print="";S.printEm=0;save();renderPrint();}},0));
+  renderPrint();
+  { const rbPrint=render; render=function(){rbPrint.apply(this,arguments);try{renderPrint();}catch(e){}}; }
+}
+
 /* ---------- salvar operações ---------- */
 const SKEY="nota-trader-leitor-v1-salvas", ST={"btn":"Salvar","lista":"Salvas","tit":"Operações salvas","nome":"Nome","ph":"ex.: WIN compra rompimento","salvar":"Salvar esta","abrir":"Abrir","apagar":"Apagar","vazio":"Nada salvo ainda. Dê um nome e toque em Salvar esta.","baixar":"Baixar arquivo","carregar":"Abrir arquivo","fechar":"Fechar","ok":"Salva","okTxt":"Ficou na lista deste aparelho. Para levar para outro celular ou computador, use Baixar arquivo.","aberta":"Operação aberta","abertaTxt":"Todas as abas voltaram como estavam quando você salvou. Use Desfazer para voltar ao que estava antes.","conf":"Apagar a operação salva","subst":"Já existe uma salva com esse nome. Substituir?","imp":"Arquivo aberto","ruim":"Esse arquivo não é uma cópia da Nota do Trader.","arq":"nota-do-trader-salvas.json","loc":"pt-BR","aviso":"Fica guardado só neste navegador. Se limpar os dados do navegador, a lista some: baixe o arquivo para ter uma cópia.","compra":"Compra","venda":"Venda"};
 let salvas=[];
@@ -1541,7 +1603,7 @@ $("salvas-lista").addEventListener("click",e=>{
   const a=e.target.closest&&e.target.closest("[data-sabrir]"), d=e.target.closest&&e.target.closest("[data-sapagar]");
   if(a){const x=salvas[+a.dataset.sabrir];if(!x)return;
     undoSnap=JSON.stringify(S);
-    S={...S,...JSON.parse(JSON.stringify(x.s))};
+    S={...S,...JSON.parse(JSON.stringify(x.s))};if(!x.s.print){S.print="";S.printEm=0;}
     save();marcarCampos({});fillInputs();setTab(S.tab||"op");render();try{syncClr();}catch(_){}
     avisoS(ST.aberta+": "+x.nome,ST.abertaTxt);$("fix-undo").classList.remove("hide");}
   if(d){const x=salvas[+d.dataset.sapagar];if(!x||!confirm(ST.conf+" \u201c"+x.nome+"\u201d?"))return;salvas.splice(+d.dataset.sapagar,1);gravarSalvas();renderSalvas();}
