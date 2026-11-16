@@ -282,6 +282,13 @@ textarea{font-family:var(--f-body);resize:vertical}
     </div>
     <div class="ideia hide" id="ideia" aria-live="polite"></div>
 
+    <div id="print-box" style="margin:14px 0 6px">
+      <h3>Print do gráfico</h3>
+      <div class="print-drop" id="print-drop" tabindex="0" role="button" aria-label="Colar ou escolher o print do gráfico">Cole aqui o print do gráfico (Ctrl+V), arraste a imagem ou toque para escolher o arquivo</div>
+      <input type="file" id="print-file" accept="image/*" class="hide">
+      <figure id="print-fig" class="hide"><img id="print-img" alt="Print do gráfico desta operação"><figcaption><span id="print-info"></span><span><button class="btn ghost small" type="button" id="print-trocar">Trocar</button> <button class="btn ghost small danger" type="button" id="print-apagar">Tirar print</button></span></figcaption></figure>
+      <p class="note" id="print-nota">O print fica guardado com a operação: entra no Salvar e no arquivo baixado. Fica só neste aparelho.</p>
+    </div>
     <h3>Execução</h3>
     <div class="fields">
       <label><span>Spread <small class="u-px">(pts)</small></span><input id="spread" inputmode="decimal"></label>
@@ -313,13 +320,6 @@ textarea{font-family:var(--f-body);resize:vertical}
     </div>
     <p class="note">Números com vírgula ou ponto: <span class="num">5480,5</span> ou <span class="num">1.0850</span>. Os valores iniciais são exemplos.</p>
 
-    <div id="print-box" style="margin-top:14px">
-      <h3>Print do gráfico</h3>
-      <div class="print-drop" id="print-drop" tabindex="0" role="button" aria-label="Colar ou escolher o print do gráfico">Cole aqui o print do gráfico (Ctrl+V), arraste a imagem ou toque para escolher o arquivo</div>
-      <input type="file" id="print-file" accept="image/*" class="hide">
-      <figure id="print-fig" class="hide"><img id="print-img" alt="Print do gráfico desta operação"><figcaption><span id="print-info"></span><span><button class="btn ghost small" type="button" id="print-trocar">Trocar</button> <button class="btn ghost small danger" type="button" id="print-apagar">Tirar print</button></span></figcaption></figure>
-      <p class="note" id="print-nota">O print fica guardado com a operação: entra no Salvar e no arquivo baixado. Fica só neste aparelho.</p>
-    </div>
   </section>
 
   <!-- COLUNA 2: resultados -->
