@@ -180,6 +180,15 @@ textarea{font-family:var(--f-body);resize:vertical}
 .mz-al.ok{border-left-color:var(--gain)}
 .mz-al small{display:block;color:var(--muted);margin-top:2px}
 @media (max-width:420px){.mz-grid{grid-template-columns:1fr}}
+.pre-src{font-size:11px;color:var(--muted);margin-top:2px;font-weight:400}
+.pre-ev{display:grid;grid-template-columns:auto 1fr 92px 96px;gap:6px 8px;align-items:center;font-size:13px}
+.pre-ev input[type=checkbox],.pre-geo input{width:auto;margin:0}
+.pre-ev input[type=time],.pre-ev select,.pre-ev input[type=text]{padding:4px 6px;font-size:13px}
+.pre-ev .h{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.pre-geo{display:grid;gap:6px;font-size:13px}
+.pre-geo label{flex-direction:row;align-items:center;gap:8px}
+.pre-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
+@media (max-width:420px){.pre-ev{grid-template-columns:auto 1fr 84px}.pre-ev .imp{grid-column:2/-1}}
 .fix-log ul{margin:6px 0 0;padding-left:18px}
 .fix-log li{margin-bottom:3px}
 .fix-log .t{font:600 12px var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
@@ -214,6 +223,7 @@ textarea{font-family:var(--f-body);resize:vertical}
     <p class="sub">Simule uma operação antes de entrar: custos, slippage, spread, margem, imposto e dedo-duro, como sairia na nota de corretagem. Os valores de taxa são referências; confira sempre na nota da sua corretora.</p>
   </div>
   <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tab-pre" aria-selected="false" data-tab="pre">Pre-market</button>
     <button class="tab" role="tab" id="tab-op" aria-selected="true" data-tab="op">Operação</button>
     <button class="tab" role="tab" id="tab-pm" aria-selected="false" data-tab="pm">Preço médio</button>
     <button class="tab" role="tab" id="tab-onde" aria-selected="false" data-tab="onde">Onde está o preço</button>
@@ -291,7 +301,8 @@ textarea{font-family:var(--f-body);resize:vertical}
         <label>Noites carregando<input id="noites" inputmode="decimal"></label>
         <label>Tamanho do contrato (1 lote)<input id="contrato" inputmode="decimal"></label>
         <label>Tamanho do pip (no preço)<input id="pip" inputmode="decimal"></label>
-        <label class="full">Dólar (USD/BRL) para converter<input id="usdbrl" inputmode="decimal"></label>
+        <label>Dólar (USD/BRL) para converter<input id="usdbrl" inputmode="decimal"></label>
+        <label>1 unidade da 2ª moeda do par em US$ <small>(1 se termina em USD)</small><input id="cotUSD" inputmode="decimal"></label>
       </div>
     </div>
     <p class="note">Números com vírgula ou ponto: <span class="num">5480,5</span> ou <span class="num">1.0850</span>. Os valores iniciais são exemplos.</p>
@@ -381,6 +392,61 @@ textarea{font-family:var(--f-body);resize:vertical}
       <p class="note">Ferramenta educativa, sem vínculo com nenhuma mesa. As regras mudam: confira sempre no regulamento atual da sua mesa (drawdown por fechamento ou por tick, horário do limite diário, como a consistência é medida).</p>
     </div>
 
+    <div id="view-pre" class="hide">
+      <div class="panel-head"><h2>Pre-market</h2></div>
+      <p class="note" style="margin-top:0">O que olhar antes de operar: dólar e juros do dia, o preço justo do dólar futuro, a agenda de notícias e o cenário. Os dados vêm de fontes públicas gratuitas (AwesomeAPI, Fed de Nova York, BrasilAPI com dados do Banco Central do Brasil, e Banco Central Europeu). Se uma fonte não responder, digite o valor.</p>
+      <div class="pre-row"><button class="btn small" id="pre-atualizar">Atualizar dados</button><span class="note" id="pre-status" style="margin:0"></span></div>
+      <h3>Dólar e juros</h3>
+      <div class="mz-grid">
+        <label>Dólar à vista (USD/BRL)<input id="pre-spot" data-pre="spot" inputmode="decimal"><span class="pre-src" id="pre-spot-src"></span></label>
+        <label>Juro no Brasil até o vencimento (% a.a.)<input id="pre-juro" data-pre="juro" inputmode="decimal"><span class="pre-src" id="pre-juro-src"></span></label>
+        <label>Cupom cambial (% a.a., linear)<input id="pre-cupom" data-pre="cupom" inputmode="decimal"><span class="pre-src" id="pre-cupom-src"></span></label>
+        <label>Vencimento do WDO<input type="date" id="pre-venc" data-pre="venc"><span class="pre-src" id="pre-venc-src"></span></label>
+        <label class="full">WDO na tela agora (pontos, opcional)<input id="pre-tela" data-pre="tela" inputmode="decimal" placeholder="ex.: 5695,5"></label>
+      </div>
+      <h3>Preço justo do dólar futuro</h3>
+      <div class="kpis" id="pre-kpis"></div>
+      <div class="pre-row"><button class="btn small" id="pre-usar-dolar">Usar este dólar na calculadora</button></div>
+      <p class="note">Conta: dólar à vista × (1 + juro)^(dias úteis/252) ÷ (1 + cupom × dias corridos/360). É o preço de equilíbrio entre os juros dos dois países, não uma previsão. Feriados não entram na contagem de dias úteis. O cupom cambial não tem fonte gratuita: o SOFR (juro do dólar nos EUA) entra só como ponto de partida; confira o cupom do dia na B3 ou na sua plataforma.</p>
+      <h3>Par de Forex do dia</h3>
+      <div class="mz-grid">
+        <label>Par (ex.: AUDNZD, EURUSD)<input id="pre-par" data-pre="par" autocapitalize="characters"><span class="pre-src" id="pre-par-src"></span></label>
+        <div class="kpi" id="pre-pip"></div>
+      </div>
+      <div class="pre-row"><button class="btn small" id="pre-usar-par">Aplicar este par na aba Operação</button></div>
+      <h3>Agenda de hoje</h3>
+      <p class="note" style="margin-top:0">Marque o que sai hoje e o horário de Brasília. Confira num calendário econômico.</p>
+      <div class="pre-ev">
+        <span class="h">hoje</span><span class="h">evento</span><span class="h">hora</span><span class="h imp">impacto</span>
+        <input type="checkbox" data-ev="payroll" data-f="on" aria-label="Hoje tem Payroll (emprego nos EUA)"><span>Payroll (emprego nos EUA)</span><input type="time" data-ev="payroll" data-f="hora" aria-label="Horário"><select class="imp" data-ev="payroll" data-f="imp" aria-label="Impacto"><option value="alto">alto</option><option value="medio">médio</option><option value="baixo">baixo</option></select>
+        <input type="checkbox" data-ev="cpi" data-f="on" aria-label="Hoje tem CPI, inflação nos EUA"><span>CPI, inflação nos EUA</span><input type="time" data-ev="cpi" data-f="hora" aria-label="Horário"><select class="imp" data-ev="cpi" data-f="imp" aria-label="Impacto"><option value="alto">alto</option><option value="medio">médio</option><option value="baixo">baixo</option></select>
+        <input type="checkbox" data-ev="fomc" data-f="on" aria-label="Hoje tem FOMC, decisão de juros do Fed"><span>FOMC, decisão de juros do Fed</span><input type="time" data-ev="fomc" data-f="hora" aria-label="Horário"><select class="imp" data-ev="fomc" data-f="imp" aria-label="Impacto"><option value="alto">alto</option><option value="medio">médio</option><option value="baixo">baixo</option></select>
+        <input type="checkbox" data-ev="fed" data-f="on" aria-label="Hoje tem Fala do presidente do Fed"><span>Fala do presidente do Fed</span><input type="time" data-ev="fed" data-f="hora" aria-label="Horário"><select class="imp" data-ev="fed" data-f="imp" aria-label="Impacto"><option value="alto">alto</option><option value="medio">médio</option><option value="baixo">baixo</option></select>
+        <input type="checkbox" data-ev="copom" data-f="on" aria-label="Hoje tem Copom, decisão da Selic"><span>Copom, decisão da Selic</span><input type="time" data-ev="copom" data-f="hora" aria-label="Horário"><select class="imp" data-ev="copom" data-f="imp" aria-label="Impacto"><option value="alto">alto</option><option value="medio">médio</option><option value="baixo">baixo</option></select>
+        <input type="checkbox" data-ev="ipca" data-f="on" aria-label="Hoje tem IPCA, inflação no Brasil"><span>IPCA, inflação no Brasil</span><input type="time" data-ev="ipca" data-f="hora" aria-label="Horário"><select class="imp" data-ev="ipca" data-f="imp" aria-label="Impacto"><option value="alto">alto</option><option value="medio">médio</option><option value="baixo">baixo</option></select>
+        <input type="checkbox" data-ev="bc" data-f="on" aria-label="Hoje tem Leilão ou intervenção do BC no câmbio"><span>Leilão ou intervenção do BC no câmbio</span><input type="time" data-ev="bc" data-f="hora" aria-label="Horário"><select class="imp" data-ev="bc" data-f="imp" aria-label="Impacto"><option value="alto">alto</option><option value="medio">médio</option><option value="baixo">baixo</option></select>
+        <input type="checkbox" data-ev="pib" data-f="on" aria-label="Hoje tem PIB (EUA ou Brasil)"><span>PIB (EUA ou Brasil)</span><input type="time" data-ev="pib" data-f="hora" aria-label="Horário"><select class="imp" data-ev="pib" data-f="imp" aria-label="Impacto"><option value="alto">alto</option><option value="medio">médio</option><option value="baixo">baixo</option></select>
+        <input type="checkbox" data-ev="outro1" data-f="on" aria-label="Hoje tem outro evento"><input type="text" data-ev="outro1" data-f="nome" placeholder="Outro evento"><input type="time" data-ev="outro1" data-f="hora" aria-label="Horário"><select class="imp" data-ev="outro1" data-f="imp" aria-label="Impacto"><option value="alto">alto</option><option value="medio">médio</option><option value="baixo">baixo</option></select>
+        <input type="checkbox" data-ev="outro2" data-f="on" aria-label="Hoje tem outro evento"><input type="text" data-ev="outro2" data-f="nome" placeholder="Outro evento"><input type="time" data-ev="outro2" data-f="hora" aria-label="Horário"><select class="imp" data-ev="outro2" data-f="imp" aria-label="Impacto"><option value="alto">alto</option><option value="medio">médio</option><option value="baixo">baixo</option></select>
+      </div>
+      <div class="mz-grid" style="margin-top:10px">
+        <label>Não operar quantos minutos antes e depois de evento de alto impacto<input data-pre="janela" id="pre-janela" inputmode="decimal"></label>
+      </div>
+      <h3>Cenário e geopolítica</h3>
+      <div class="pre-geo">
+        <label><input type="checkbox" data-geo="0"> Guerra ou conflito com notícia nova</label>
+        <label><input type="checkbox" data-geo="1"> Tarifas ou guerra comercial</label>
+        <label><input type="checkbox" data-geo="2"> Eleição ou crise política (Brasil ou EUA)</label>
+        <label><input type="checkbox" data-geo="3"> Risco fiscal no Brasil (gastos, arcabouço)</label>
+        <label><input type="checkbox" data-geo="4"> Petróleo ou commodities com movimento forte</label>
+        <label><input type="checkbox" data-geo="5"> Dólar global (DXY) com movimento forte</label>
+        <label><input type="checkbox" data-geo="6"> Feriado nos EUA ou no Brasil (liquidez baixa)</label>
+      </div>
+      <label style="margin-top:10px">Resumo do dia em uma frase<textarea id="pre-notas" data-pre="notas" rows="2" placeholder="ex.: dólar forte lá fora, Payroll às 10h30, sem posição antes do dado"></textarea></label>
+      <div class="mz-alerts" id="pre-alerts" aria-live="polite"></div>
+      <p class="note">Ferramenta educativa. Não é recomendação de investimento e não indica compra ou venda.</p>
+    </div>
+
     <div id="view-ex" class="hide">
       <div class="panel-head"><h2>Exemplos</h2></div>
       <p class="note" style="margin-top:0">Uma operação completa para cada ativo, com todas as abas preenchidas: operação, preço médio, onde está o preço e cenários. Os preços são fictícios. Carregar um exemplo substitui o que está na tela; o botão Desfazer traz de volta.</p>
@@ -459,7 +525,7 @@ const $=id=>document.getElementById(id);
 const PRESETS={
   WDO:{qtd:"1",entrada:"5480",stop:"5470",alvo:"5500",spread:"0,5",slip:"0,5",corret:"0",emol:"1,10",margem:"150",dias:"0"},
   WIN:{qtd:"1",entrada:"130000",stop:"129800",alvo:"130400",spread:"5",slip:"5",corret:"0",emol:"0,30",margem:"100",dias:"0"},
-  FX:{qtd:"0,01",entrada:"1.0850",stop:"1.0830",alvo:"1.0890",spread:"1",slip:"0,2",comissao:"7",alav:"100",swap:"-6",noites:"0",contrato:"100000",pip:"0.0001"},
+  FX:{qtd:"0,01",entrada:"1.0850",stop:"1.0830",alvo:"1.0890",spread:"1",slip:"0,2",comissao:"7",alav:"100",swap:"-6",noites:"0",contrato:"100000",pip:"0.0001",cotUSD:"1"},
   XAU:{qtd:"0,01",entrada:"4000",stop:"3990",alvo:"4020",spread:"3",slip:"2",comissao:"7",alav:"100",swap:"-30",noites:"0",contrato:"100",pip:"0.1"}
 };
 const CEN={
@@ -505,7 +571,7 @@ const INFO={
   FX:{nome:"Forex",dec:5,un:"pips",b3:false},
   XAU:{nome:"Ouro XAU/USD",dec:2,un:"pips",b3:false}
 };
-const TEXT_IDS=["qtd","capital","entrada","stop","alvo","riscoPct","spread","slip","corret","emol","margem","dias","comissao","alav","swap","noites","contrato","pip","usdbrl","pmAtual","oMax","oMin","oAtual","oMedia","oAtr"];
+const TEXT_IDS=["qtd","capital","entrada","stop","alvo","riscoPct","spread","slip","corret","emol","margem","dias","comissao","alav","swap","noites","contrato","pip","usdbrl","cotUSD","pmAtual","oMax","oMin","oAtual","oMedia","oAtr"];
 
 let S={inst:"WDO",lado:"C",modo:"day",capital:"500",riscoPct:"2",usdbrl:"5,48",
   ...PRESETS.WDO,...PRESETS.FX,...PRESETS.WDO,
@@ -702,7 +768,7 @@ function calcWith(S){
   const qtd=num(S.qtd), ent=num(S.entrada), stp=num(S.stop), alv=num(S.alvo);
   const dir=S.lado==="C"?1:-1, usd=num(S.usdbrl), capital=num(S.capital);
   const contrato=num(S.contrato), pip=num(S.pip);
-  const m=b3?I.mult():contrato*usd;            // R$ por 1,0 de preço por contrato/lote
+  const m=b3?I.mult():contrato*usd*cotQ(S);            // R$ por 1,0 de preço por contrato/lote
   const unit=b3?1:pip;                           // spread/slippage informados em pts (B3) ou pips (FX)
   const spreadU=num(S.spread)*unit, slipU=num(S.slip)*unit;
   const dStop=(stp-ent)*dir, dAlvo=(alv-ent)*dir;
@@ -811,7 +877,7 @@ function render(){
 /* ---------- preço médio ---------- */
 function calcPM(){
   const I=INFO[S.inst], b3=I.b3, usd=num(S.usdbrl);
-  const m=b3?I.mult():num(S.contrato)*usd;
+  const m=b3?I.mult():num(S.contrato)*usd*cotQ(S);
   const custoLado=b3?(num(S.corret)+num(S.emol)):(num(S.comissao)/2*usd);
   let pos=0,avg=0,realizado=0,custos=0,passos=[];
   for(const o of S.ops){
@@ -855,7 +921,7 @@ function renderPM(){
   h+=c("Preço para sair no zero a zero",Number.isFinite(P.be)?nf(P.be,I.dec+(I.b3?1:0)):"–");
   $("pm-out").innerHTML=h;
   const ref=num(S.entrada), fora=S.ops.some(o=>{const p=num(o.preco);return ref>0&&Number.isFinite(p)&&Math.abs(p/ref-1)>.25;});
-  $("pm-note").textContent=(fora?"Atenção: há ordens com preço muito longe da entrada da aba Operação. Parecem de outro ativo ou de um exemplo antigo; apague ou corrija essas linhas. ":"")+(P.pos!==0?("Cada "+(I.b3?"ponto":"pip")+" contra a posição agora custa "+brl((I.b3?1:num(S.pip))*(I.b3?I.mult():num(S.contrato)*num(S.usdbrl))*Math.abs(P.pos))+". Aumentar a mão no sentido contrário melhora o preço médio, mas também aumenta esse valor por ponto."):"");
+  $("pm-note").textContent=(fora?"Atenção: há ordens com preço muito longe da entrada da aba Operação. Parecem de outro ativo ou de um exemplo antigo; apague ou corrija essas linhas. ":"")+(P.pos!==0?("Cada "+(I.b3?"ponto":"pip")+" contra a posição agora custa "+brl((I.b3?1:num(S.pip))*(I.b3?I.mult():num(S.contrato)*num(S.usdbrl)*cotQ(S))*Math.abs(P.pos))+". Aumentar a mão no sentido contrário melhora o preço médio, mas também aumenta esse valor por ponto."):"");
 }
 
 /* ---------- onde está o preço ---------- */
@@ -903,8 +969,8 @@ $("ops").addEventListener("input",e=>{const t=e.target;if(t.dataset.i==null)retu
 $("ops").addEventListener("change",e=>{const t=e.target;if(t.tagName!=="SELECT")return;S.ops[+t.dataset.i].lado=t.value;save();render();});
 $("ops").addEventListener("click",e=>{const b=e.target.closest("[data-del]");if(!b)return;S.ops.splice(+b.dataset.del,1);save();renderOps();render();});
 $("add-op").addEventListener("click",()=>{const last=S.ops[S.ops.length-1];S.ops.push({lado:last?last.lado:"C",qtd:last?last.qtd:"1",preco:last?last.preco:S.entrada});save();renderOps();render();});
-function setTab(t){if(!["op","pm","onde","cen","ex","mesa"].includes(t))t="op";S.tab=t;save();document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab===t)));
-  ["op","pm","onde","cen","ex","mesa"].forEach(v=>$("view-"+v).classList.toggle("hide",t!==v));
+function setTab(t){if(!["op","pm","onde","cen","ex","mesa","pre"].includes(t))t="op";S.tab=t;save();document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab===t)));
+  ["op","pm","onde","cen","ex","mesa","pre"].forEach(v=>$("view-"+v).classList.toggle("hide",t!==v));
   if(t==="cen")renderCen();}
 
 /* ---------- cenários ---------- */
@@ -1309,6 +1375,139 @@ if($("view-mesa")){
   renderMesa();
   { const rbMesa=render; render=function(){rbMesa.apply(this,arguments);try{renderMesa();}catch(e){}}; }
   try{const lv=new URLSearchParams(location.search).get("livro");if(lv&&/^mesas?$/i.test(lv))setTab("mesa");}catch(e){}
+}
+
+
+/* ---------- pre-market ---------- */
+function cotQ(s){if(!s||s.inst!=="FX")return 1;const c=num(s.cotUSD);return Number.isFinite(c)&&c>0?c:1;}
+const PRE_EV=[["payroll","Payroll (emprego nos EUA)","alto"],["cpi","CPI, inflação nos EUA","alto"],["fomc","FOMC, decisão de juros do Fed","alto"],["fed","Fala do presidente do Fed","medio"],["copom","Copom, decisão da Selic","alto"],["ipca","IPCA, inflação no Brasil","medio"],["bc","Leilão ou intervenção do BC no câmbio","medio"],["pib","PIB (EUA ou Brasil)","medio"],["outro1","","medio"],["outro2","","medio"]];
+const PRE_NGEO=7;
+const p2=n=>String(n).padStart(2,"0");
+const isoDia=d=>d.getFullYear()+"-"+p2(d.getMonth()+1)+"-"+p2(d.getDate());
+function preVencPadrao(){const d=new Date();d.setHours(12,0,0,0);d.setDate(1);d.setMonth(d.getMonth()+1);while(d.getDay()===0||d.getDay()===6)d.setDate(d.getDate()+1);return isoDia(d);}
+function ensurePre(){
+  const base={spot:"",spotSrc:"",juro:"",cupom:"",selic:"",selicSrc:"",sofr:"",sofrSrc:"",venc:"",tela:"",par:"AUDNZD",parPreco:"",parCot:"",parSrc:"",janela:"15",ev:{},geo:[],notas:"",ultima:0};
+  if(!S.pre||typeof S.pre!=="object")S.pre={};
+  for(const k in base)if(S.pre[k]===undefined)S.pre[k]=base[k];
+  if(!S.pre.venc||S.pre.venc<isoDia(new Date()))S.pre.venc=preVencPadrao();
+  PRE_EV.forEach(([id,,imp])=>{if(!S.pre.ev[id])S.pre.ev[id]={on:false,hora:"",imp,nome:""};});
+  return S.pre;
+}
+function preDias(venc){
+  const a=new Date();a.setHours(12,0,0,0);const b=new Date(venc+"T12:00:00");
+  if(!(b>a))return {du:0,dc:0};
+  let du=0;const d=new Date(a);while(d<b){const w=d.getDay();if(w>0&&w<6)du++;d.setDate(d.getDate()+1);}
+  return {du,dc:Math.round((b-a)/864e5)};
+}
+function calcPre(){
+  const P=ensurePre();
+  const spot=num(P.spot), juro=Number.isFinite(num(P.juro))?num(P.juro):num(P.selic), cupom=Number.isFinite(num(P.cupom))?num(P.cupom):num(P.sofr);
+  const {du,dc}=preDias(P.venc);
+  const ok=spot>0&&Number.isFinite(juro)&&Number.isFinite(cupom)&&dc>0;
+  const justo=ok?spot*Math.pow(1+juro/100,du/252)/(1+cupom/100*dc/360):NaN;
+  const tela=num(P.tela)/1000;
+  const cupomImp=ok&&tela>0?((spot*Math.pow(1+juro/100,du/252))/tela-1)*360/dc*100:NaN;
+  return {P,spot,juro,cupom,du,dc,justo,tela,cupomImp};
+}
+async function preGet(url){const c=new AbortController();const t=setTimeout(()=>c.abort(),9000);try{const r=await fetch(url,{signal:c.signal});if(!r.ok)throw new Error("HTTP "+r.status);return await r.json();}finally{clearTimeout(t);}}
+const dec=s=>String(s).replace(".",",");
+async function preParFetch(P){
+  const par=String(P.par||"").toUpperCase().replace(/[^A-Z]/g,"");
+  if(par.length!==6)throw new Error("par");
+  const A=par.slice(0,3),B=par.slice(3);
+  let preco,cot,data;
+  if(B==="USD"){const j=await preGet("https://api.frankfurter.dev/v1/latest?base="+A+"&symbols=USD");preco=j.rates.USD;cot=1;data=j.date;}
+  else if(A==="USD"){const j=await preGet("https://api.frankfurter.dev/v1/latest?base=USD&symbols="+B);preco=j.rates[B];cot=1/preco;data=j.date;}
+  else{const j=await preGet("https://api.frankfurter.dev/v1/latest?base="+A+"&symbols="+B+",USD");preco=j.rates[B];cot=j.rates.USD/preco;data=j.date;}
+  if(!(preco>0&&cot>0))throw new Error("par");
+  P.par=par;P.parPreco=preco;P.parCot=cot;P.parSrc="Banco Central Europeu, fechamento de "+data.split("-").reverse().join("/");
+}
+let preBusy=false;
+async function preAtualizar(){
+  if(preBusy)return;preBusy=true;
+  const P=ensurePre(), falhas=[];
+  $("pre-status").textContent="Buscando dados…";$("pre-atualizar").disabled=true;
+  await Promise.all([
+    preGet("https://economia.awesomeapi.com.br/json/last/USD-BRL").then(j=>{const q=j.USDBRL;P.spot=dec(q.bid);P.spotSrc="AwesomeAPI, "+q.create_date.slice(8,10)+"/"+q.create_date.slice(5,7)+" às "+q.create_date.slice(11,16);}).catch(()=>falhas.push("dólar à vista")),
+    preGet("https://markets.newyorkfed.org/api/rates/secured/sofr/last/1.json").then(j=>{const r=j.refRates[0];P.sofr=dec(r.percentRate);P.sofrSrc="SOFR "+dec(r.percentRate)+"% em "+r.effectiveDate.split("-").reverse().join("/")+" (Fed de Nova York)";}).catch(()=>falhas.push("SOFR")),
+    preGet("https://brasilapi.com.br/api/taxas/v1").then(j=>{const t=n=>(j.find(x=>String(x.nome).toUpperCase()===n)||{}).valor;const cdi=t("CDI"),sel=t("SELIC");if(!(cdi>0))throw 0;P.selic=dec(cdi);P.selicSrc="CDI "+dec(cdi)+"%"+(sel>0?" e Selic "+dec(sel)+"%":"")+" (BrasilAPI, dados do Banco Central)";}).catch(()=>falhas.push("CDI")),
+    preParFetch(P).catch(()=>falhas.push("par "+(P.par||"")))
+  ]);
+  P.ultima=Date.now();save();renderPre();
+  const h=new Date();
+  $("pre-status").textContent="Atualizado às "+p2(h.getHours())+":"+p2(h.getMinutes())+"."+(falhas.length?" Sem resposta de: "+falhas.join(", ")+". Digite esses valores.":"");
+  $("pre-atualizar").disabled=false;preBusy=false;
+}
+function preEventos(){
+  const P=ensurePre(), jan=Math.max(0,num(P.janela)||0), agora=new Date(), min=agora.getHours()*60+agora.getMinutes();
+  return PRE_EV.map(([id,nome])=>{const e=P.ev[id];if(!e||!e.on||!/^\d\d:\d\d$/.test(e.hora||""))return null;
+    const m=+e.hora.slice(0,2)*60+ +e.hora.slice(3,5);
+    return {nome:nome||e.nome||"Outro evento",hora:e.hora,imp:e.imp,m,dentro:min>=m-jan&&min<=m+jan,falta:m-min,ate:m+jan};}).filter(Boolean).sort((a,b)=>a.m-b.m);
+}
+const hm=m=>p2(Math.floor(((m%1440)+1440)%1440/60))+":"+p2(((m%60)+60)%60);
+function renderPre(){
+  if(!$("view-pre"))return;
+  const R=calcPre(), P=R.P, act=document.activeElement;
+  document.querySelectorAll("#view-pre [data-pre]").forEach(el=>{if(el!==act)el.value=P[el.dataset.pre]??"";});
+  document.querySelectorAll("#view-pre [data-ev]").forEach(el=>{if(el===act)return;const e=P.ev[el.dataset.ev];if(el.type==="checkbox")el.checked=!!e.on;else el.value=e[el.dataset.f]??"";});
+  document.querySelectorAll("#view-pre [data-geo]").forEach(el=>{el.checked=!!P.geo[+el.dataset.geo];});
+  $("pre-juro").placeholder=P.selic?"CDI: "+P.selic:"ex.: 14";
+  $("pre-cupom").placeholder=P.sofr?"SOFR: "+P.sofr:"ex.: 4,5";
+  $("pre-spot-src").textContent=P.spotSrc||"";
+  $("pre-juro-src").textContent=P.juro?"valor digitado"+(P.selicSrc?" · "+P.selicSrc:""):(P.selicSrc?"usando "+P.selicSrc+". Para mais precisão, digite a taxa DI do vencimento":"digite a taxa DI do vencimento");
+  $("pre-cupom-src").textContent=P.cupom?"valor digitado"+(P.sofrSrc?" · "+P.sofrSrc:""):(P.sofrSrc?"usando o "+P.sofrSrc+" como ponto de partida":"digite o cupom do dia");
+  $("pre-venc-src").textContent=R.dc>0?R.du+" dias úteis e "+R.dc+" dias corridos até o vencimento":"escolha uma data futura";
+  $("pre-par-src").textContent=P.parSrc||"";
+  const k=(t,val,d,cls)=>'<div class="kpi"><div class="k">'+t+'</div><div class="v '+(cls||"")+'">'+val+'</div>'+(d?'<div class="d">'+d+'</div>':"")+'</div>';
+  const pts=n=>nf(Math.round(n*2000)/2,1);
+  let h="";
+  h+=k("WDO justo",Number.isFinite(R.justo)?pts(R.justo):"–",Number.isFinite(R.justo)?"vencimento "+P.venc.split("-").reverse().join("/")+" · juro "+nf(R.juro,2)+"% · cupom "+nf(R.cupom,2)+"%":"preencha dólar, juro e cupom");
+  h+=k("Dólar à vista",R.spot>0?pts(R.spot):"–",R.spot>0?"em pontos do WDO (R$ "+nf(R.spot,4)+")":"");
+  if(R.tela>0&&Number.isFinite(R.justo)){const d=(R.tela-R.justo)*1000;
+    h+=k("Tela contra o justo",(d>0?"+":"")+nf(Math.round(d*2)/2,1)+" pts",(d>0?"acima":"abaixo")+" do justo: "+brl(Math.abs(Math.round(d*2)/2)*10)+" por mini contrato",Math.abs(d)>=10?"loss":"");
+    h+=k("Cupom implícito na tela",Number.isFinite(R.cupomImp)?nf(R.cupomImp,2)+"%":"–","o cupom que faz a tela bater com a conta");}
+  $("pre-kpis").innerHTML=h;
+  const pipBox=$("pre-pip");
+  if(P.parPreco){const B=String(P.par).slice(3), pip=B==="JPY"?0.01:0.0001, pUSD=1000*pip*P.parCot, u=R.spot>0?R.spot:num(S.usdbrl);
+    pipBox.innerHTML='<div class="k">'+P.par+" "+nf(P.parPreco,B==="JPY"?3:5)+'</div><div class="v">US$ '+nf(pUSD,3)+'</div><div class="d">por pip com 0,01 lote'+(u>0?" ("+brl(pUSD*u)+")":"")+". 1 "+B+" = US$ "+nf(P.parCot,4)+"</div>";}
+  else pipBox.innerHTML='<div class="k">Valor do pip</div><div class="v">–</div><div class="d">toque em Atualizar dados</div>';
+  const A=[], al=(n,t,s)=>A.push('<div class="mz-al '+n+'">'+t+(s?"<small>"+s+"</small>":"")+"</div>");
+  const E=preEventos(); let alerta=false;
+  E.forEach(e=>{
+    if(e.imp==="alto"&&e.dentro){alerta=true;al("alto","Agora está dentro da janela de "+e.nome+" ("+e.hora+"). Pela sua regra, sem operação nova até "+hm(e.ate)+".","Em dado de alto impacto o spread abre e o preço pode pular o stop (slippage).");}
+    else if(e.dentro)al("medio",e.nome+" às "+e.hora+": evento de impacto "+(e.imp==="medio"?"médio":"baixo")+" acontecendo agora.","");
+    else if(e.falta>0&&e.falta<=120)al("info",e.nome+" às "+e.hora+": faltam "+(e.falta>=60?Math.floor(e.falta/60)+"h"+p2(e.falta%60):e.falta+" min")+".",e.imp==="alto"?"Operação aberta perto do dado: confira se o stop aguenta um pulo de preço.":"");
+  });
+  if(!E.length)al("info","Nenhum evento marcado para hoje. Se não conferiu o calendário econômico, confira antes de operar.","");
+  const ng=P.geo.filter(Boolean).length;
+  if(ng>=3)al("medio",ng+" fatores de cenário marcados. Dias assim tendem a ter mais volatilidade.","Confira se o stop e o tamanho da posição ainda cabem na sua regra de risco antes de entrar.");
+  else if(ng>0)al("info",ng+" fator"+(ng>1?"es":"")+" de cenário marcado"+(ng>1?"s":"")+".","");
+  if(R.tela>0&&Number.isFinite(R.justo)&&Math.abs(R.tela-R.justo)*1000>=10)al("info","O WDO da tela está "+nf(Math.abs(R.tela-R.justo)*1000,1)+" pontos "+(R.tela>R.justo?"acima":"abaixo")+" do justo calculado.","Diferença grande costuma vir do cupom ou do juro digitados. Confira o cupom do dia antes de tirar conclusão: o cupom implícito ao lado mostra qual taxa a tela está usando.");
+  $("pre-alerts").innerHTML=A.join("");
+  const tb=$("tab-pre");if(tb)tb.textContent=alerta?"Pre-market ⚠":"Pre-market";
+}
+if($("view-pre")){
+  ensurePre();
+  const V=$("view-pre");
+  const onEdit=e=>{const el=e.target, P=ensurePre();
+    if(el.dataset.pre){P[el.dataset.pre]=el.dataset.pre==="par"?el.value.toUpperCase():el.value;if(el.dataset.pre==="par"){P.parPreco="";P.parSrc="";}}
+    else if(el.dataset.ev){const ev=P.ev[el.dataset.ev];if(el.type==="checkbox")ev.on=el.checked;else{ev[el.dataset.f]=el.value;if(el.dataset.f==="hora"&&el.value)ev.on=true;}}
+    else if(el.dataset.geo!=null){P.geo[+el.dataset.geo]=el.checked;}
+    else return;
+    save();renderPre();};
+  V.addEventListener("input",onEdit);V.addEventListener("change",onEdit);
+  $("pre-par").addEventListener("change",()=>{preParFetch(ensurePre()).then(()=>{save();renderPre();}).catch(()=>{$("pre-status").textContent="Par "+ensurePre().par+": sem cotação no Banco Central Europeu. Confira as letras (ex.: AUDNZD).";});});
+  $("pre-atualizar").addEventListener("click",preAtualizar);
+  $("pre-usar-dolar").addEventListener("click",()=>{const P=ensurePre();if(!(num(P.spot)>0)){$("pre-status").textContent="Sem dólar à vista para usar.";return;}S.usdbrl=P.spot;save();render();$("pre-status").textContent="Dólar "+P.spot+" levado para a conversão da calculadora.";});
+  $("pre-usar-par").addEventListener("click",()=>{const P=ensurePre();if(!P.parCot){$("pre-status").textContent="Toque em Atualizar dados para buscar a cotação do par.";return;}
+    S.par=P.par;S.cotUSD=nf(P.parCot,5);if(num(P.spot)>0)S.usdbrl=P.spot;save();render();
+    $("pre-status").textContent=P.par+" aplicado: 1 "+P.par.slice(3)+" = US$ "+nf(P.parCot,4)+(S.inst!=="FX"?". Na aba Operação, escolha o ativo Forex.":". O valor do pip da aba Operação já usa essa cotação.");});
+  $("tab-pre").addEventListener("click",()=>{if(Date.now()-ensurePre().ultima>15*60e3)preAtualizar();});
+  renderPre();
+  if(S.tab==="pre"&&Date.now()-ensurePre().ultima>15*60e3)preAtualizar();
+  setInterval(()=>{try{renderPre();}catch(e){}},30000);
+  { const rbPre=render; render=function(){rbPre.apply(this,arguments);try{renderPre();}catch(e){}}; }
+  try{const ab=new URLSearchParams(location.search).get("aba");if(ab&&/^pre/i.test(ab)){setTab("pre");if(Date.now()-ensurePre().ultima>15*60e3)preAtualizar();}}catch(e){}
 }
 
 /* ---------- salvar operações ---------- */
