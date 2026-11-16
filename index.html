@@ -219,6 +219,17 @@ textarea{font-family:var(--f-body);resize:vertical}
 .bx-al{margin-top:8px;border-radius:8px;padding:8px 10px;font-size:13px}
 .bx-al.alto{background:#45191b;color:#ffb3b3}.bx-al.medio{background:#3d3114;color:#f5d48b}.bx-al.ok{background:#123d2a;color:#9be8bf}.bx-al.info{background:#232b35;color:#c9d2dc}
 .bx-foot{margin-top:12px;font-size:11px;color:#93a0ae}
+body.simples .avancado{display:none!important}
+.simples-guia{display:none;margin:0 0 12px;padding:10px 12px 10px 30px;border:1px solid var(--line);border-left:4px solid var(--gain);border-radius:6px;background:var(--bg);font-size:13px;line-height:1.5}
+body.simples .simples-guia{display:block}
+.dr-it{border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:8px;background:var(--bg);font-size:13px}
+.dr-it .t{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.dr-it .t b{font-size:14px}
+.dr-it .c{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.dr-it select,.dr-it input[type=text]{width:auto;padding:4px 6px;font-size:13px}
+.dr-it .c label{flex-direction:row;align-items:center;gap:6px;font-size:13px}
+.dr-it .c input[type=checkbox]{width:auto;margin:0}
+.dr-v{font:600 14px var(--f-mono)}
 .fix-log ul{margin:6px 0 0;padding-left:18px}
 .fix-log li{margin-bottom:3px}
 .fix-log .t{font:600 12px var(--f-display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
@@ -255,10 +266,11 @@ textarea{font-family:var(--f-body);resize:vertical}
   <div class="tabs" role="tablist">
     <button class="tab" role="tab" id="tab-pre" aria-selected="false" data-tab="pre">Pre-market</button>
     <button class="tab" role="tab" id="tab-op" aria-selected="true" data-tab="op">Operação</button>
-    <button class="tab" role="tab" id="tab-pm" aria-selected="false" data-tab="pm">Preço médio</button>
-    <button class="tab" role="tab" id="tab-onde" aria-selected="false" data-tab="onde">Onde está o preço</button>
-    <button class="tab" role="tab" id="tab-cen" aria-selected="false" data-tab="cen">Cenários</button>
-    <button class="tab" role="tab" id="tab-ex" aria-selected="false" data-tab="ex">Exemplos</button>
+    <button class="tab avancado" role="tab" id="tab-pm" aria-selected="false" data-tab="pm">Preço médio</button>
+    <button class="tab avancado" role="tab" id="tab-onde" aria-selected="false" data-tab="onde">Onde está o preço</button>
+    <button class="tab avancado" role="tab" id="tab-cen" aria-selected="false" data-tab="cen">Cenários</button>
+    <button class="tab avancado" role="tab" id="tab-ex" aria-selected="false" data-tab="ex">Exemplos</button>
+    <button class="tab" role="tab" id="tab-diario" aria-selected="false" data-tab="diario">Diário</button>
     <button class="tab" role="tab" id="tab-mesa" aria-selected="false" data-tab="mesa">Mesa proprietária</button>
   </div>
 </header>
@@ -270,6 +282,7 @@ textarea{font-family:var(--f-body);resize:vertical}
   <button class="btn ghost small" type="button" id="salvar-btn" aria-expanded="false" aria-controls="salvas">Salvar <span id="salvas-n"></span></button>
   <button class="btn ghost hide" type="button" id="fix-undo">Desfazer</button>
   <label class="fix-auto"><input type="checkbox" id="fix-auto"> Corrigir sozinho ao sair do campo</label>
+  <label class="fix-auto"><input type="checkbox" id="modo-simples"> Modo simples</label>
   <div class="fix-log hide" id="fix-log"></div>
   <div class="salvas hide" id="salvas">
     <div class="lin"><strong>Operações salvas</strong><button class="btn ghost small" type="button" id="salvas-fechar" style="margin-left:auto">Fechar</button></div>
@@ -284,6 +297,7 @@ textarea{font-family:var(--f-body);resize:vertical}
   <!-- COLUNA 1: entradas -->
   <section class="panel" id="col-in">
     <div class="panel-head"><h2>Operação</h2><button class="btn ghost small danger" type="button" data-apagar="op" title="Apaga quantidade, entrada, stop, alvo, spread e slippage. Mantém custos e capital.">Apagar operação</button></div>
+    <ol class="simples-guia"><li>Escolha o <b>ativo</b> e <b>Compra</b> ou <b>Venda</b>.</li><li>Digite a <b>entrada</b> (o preço do gráfico) e o seu <b>capital</b>.</li><li>Aperte <b>Enviar e corrigir</b>: stop, alvo e tamanho saem da sua regra de risco. O resultado aparece ao lado.</li></ol>
     <div class="fields">
       <label class="full">Ativo
         <select id="inst">
@@ -318,6 +332,7 @@ textarea{font-family:var(--f-body);resize:vertical}
     </div>
     <div class="pre-row" id="bx-row" style="margin:6px 0 14px"><button class="btn" type="button" id="bx-abrir">Montar a ordem da XTB</button><span class="note" id="bx-msg" style="margin:0"></span></div>
     <div class="bx-modal hide" id="bx-modal" role="dialog" aria-modal="true" aria-labelledby="bx-tit"><div class="bx-card" id="bx-card"></div></div>
+    <div class="avancado">
     <h3>Execução</h3>
     <div class="fields">
       <label><span>Spread <small class="u-px">(pts)</small></span><input id="spread" inputmode="decimal"></label>
@@ -346,6 +361,7 @@ textarea{font-family:var(--f-body);resize:vertical}
         <label>Dólar (USD/BRL) para converter<input id="usdbrl" inputmode="decimal"></label>
         <label>1 unidade da 2ª moeda do par em US$ <small>(1 se termina em USD)</small><input id="cotUSD" inputmode="decimal"></label>
       </div>
+    </div>
     </div>
     <p class="note">Números com vírgula ou ponto: <span class="num">5480,5</span> ou <span class="num">1.0850</span>. Os valores iniciais são exemplos.</p>
 
@@ -490,6 +506,16 @@ textarea{font-family:var(--f-body);resize:vertical}
       <p class="note">Ferramenta educativa. Não é recomendação de investimento e não indica compra ou venda.</p>
     </div>
 
+    <div id="view-diario" class="hide">
+      <div class="panel-head"><h2>Diário</h2></div>
+      <p class="note" style="margin-top:0">As operações salvas viram o seu diário. Marque como cada uma terminou e se você seguiu o plano: as contas aparecem aqui. Meta de treino: 20 operações seguindo o plano.</p>
+      <div class="kpis" id="dr-kpis"></div>
+      <div class="mz-alerts" id="dr-alerts" aria-live="polite"></div>
+      <h3>Operações</h3>
+      <div id="dr-lista"></div>
+      <p class="note">Os valores de stop e alvo vêm dos números salvos na operação, já com custos. Em saída manual, digite o resultado em reais. Fica só neste aparelho: use Baixar arquivo, no Salvar, para ter cópia.</p>
+    </div>
+
     <div id="view-ex" class="hide">
       <div class="panel-head"><h2>Exemplos</h2></div>
       <p class="note" style="margin-top:0">Uma operação completa para cada ativo, com todas as abas preenchidas: operação, preço médio, onde está o preço e cenários. Os preços são fictícios. Carregar um exemplo substitui o que está na tela; o botão Desfazer traz de volta.</p>
@@ -556,7 +582,7 @@ textarea{font-family:var(--f-body);resize:vertical}
     <li><a href="https://www.amazon.com.br/dp/B0HRSN67XY" target="_blank" rel="noopener">Guia de Sobrevivência nas Mesas Proprietárias</a> · <a href="?livro=mesas">abrir a aba Mesa proprietária</a></li>
   </ul>
   <p style="margin:0"><a href="https://www.amazon.com.br/Marcus-Deleon/e/B0F8TLHTWG" target="_blank" rel="noopener">Todos os livros de Marcus Deleon na Amazon</a></p>
-  <p style="margin:0">Ferramenta educativa. Não é recomendação de investimento, não indica compra ou venda de nenhum ativo e não substitui orientação de profissional credenciado. Operar alavancado pode causar perdas maiores que o capital. Taxas, margens e regras de imposto mudam e variam por corretora: confira sempre na sua nota de corretagem e com um contador. Os dados ficam só no seu navegador; nada é enviado. <a href="en/">English version (Forex and gold)</a>.</p>
+  <p style="margin:0">Ferramenta educativa. Não é recomendação de investimento, não indica compra ou venda de nenhum ativo e não substitui orientação de profissional credenciado. Sem vínculo com a XTB, com mesas proprietárias ou com qualquer corretora: nomes de plataformas e ativos aparecem só como referência para as contas. Operar alavancado pode causar perdas maiores que o capital. Taxas, margens e regras de imposto mudam e variam por corretora: confira sempre na sua nota de corretagem e com um contador. Os dados ficam só no seu navegador; nada é enviado. <a href="en/">English version (Forex and gold)</a>.</p>
 </footer>
 </div>
 
@@ -1015,8 +1041,8 @@ $("ops").addEventListener("input",e=>{const t=e.target;if(t.dataset.i==null)retu
 $("ops").addEventListener("change",e=>{const t=e.target;if(t.tagName!=="SELECT")return;S.ops[+t.dataset.i].lado=t.value;save();render();});
 $("ops").addEventListener("click",e=>{const b=e.target.closest("[data-del]");if(!b)return;S.ops.splice(+b.dataset.del,1);save();renderOps();render();});
 $("add-op").addEventListener("click",()=>{const last=S.ops[S.ops.length-1];S.ops.push({lado:last?last.lado:"C",qtd:last?last.qtd:"1",preco:last?last.preco:S.entrada});save();renderOps();render();});
-function setTab(t){if(!["op","pm","onde","cen","ex","mesa","pre"].includes(t))t="op";S.tab=t;save();document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab===t)));
-  ["op","pm","onde","cen","ex","mesa","pre"].forEach(v=>$("view-"+v).classList.toggle("hide",t!==v));
+function setTab(t){if(!["op","pm","onde","cen","ex","mesa","pre","diario"].includes(t))t="op";S.tab=t;save();document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab===t)));
+  ["op","pm","onde","cen","ex","mesa","pre","diario"].forEach(v=>$("view-"+v).classList.toggle("hide",t!==v));
   if(t==="cen")renderCen();}
 
 /* ---------- cenários ---------- */
@@ -1668,7 +1694,7 @@ function renderBoleta(){
   if(S.inst==="FX"&&bxLeitura&&bxLeitura.aviso)al("medio",bxLeitura.aviso);
   if(bxLeitura&&(bxLeitura.min||bxLeitura.max))al("info","No print: mínima visível "+(bxLeitura.min?f(bxLeitura.min):"–")+" · máxima visível "+(bxLeitura.max?f(bxLeitura.max):"–")+". O stop acima vem da sua regra de risco, não do gráfico: veja se ele fica num lugar que faz sentido para a sua ideia.");
   h+=A.join("");
-  h+='<div class="bx-foot">A distância do Click &amp; Trade conta a partir do preço em que a ordem for executada. Os preços acima usam a entrada planejada: se o preço andar, ajuste. Ferramenta educativa, não indica compra ou venda.</div>';
+  h+='<div class="bx-foot">A distância do Click &amp; Trade conta a partir do preço em que a ordem for executada. Os preços acima usam a entrada planejada: se o preço andar, ajuste. Ferramenta educativa, não indica compra ou venda. Sem vínculo com a XTB.</div>';
   $("bx-card").innerHTML=h;
 }
 function bxAbrir(){renderBoleta();$("bx-modal").classList.remove("hide");setTimeout(()=>{const b=$("bx-fechar");b&&b.focus();},0);}
@@ -1716,6 +1742,21 @@ if($("cfd")){
   { const rbCfd=render; render=function(){rbCfd.apply(this,arguments);try{cfdUI();}catch(e){}}; }
 }
 
+
+/* ---------- gancho para os testes (testes/contas.html) ---------- */
+try{window.__notaTeste={calcWith,cotQ,INFO,PRESETS};}catch(e){}
+/* ---------- modo simples ---------- */
+function simplesAplicar(){
+  const on=!!S.simples;document.body.classList.toggle("simples",on);
+  const ck=$("modo-simples");if(ck)ck.checked=on;
+  if(on&&["pm","onde","cen","ex"].includes(S.tab))setTab("op");
+}
+try{if(S.simples===undefined&&new URLSearchParams(location.search).get("livro"))S.simples=true;}catch(e){}
+if($("modo-simples")){
+  $("modo-simples").addEventListener("change",()=>{S.simples=$("modo-simples").checked;save();simplesAplicar();});
+  simplesAplicar();
+}
+
 /* ---------- salvar operações ---------- */
 const SKEY="nota-trader-leitor-v1-salvas", ST={"btn":"Salvar","lista":"Salvas","tit":"Operações salvas","nome":"Nome","ph":"ex.: WIN compra rompimento","salvar":"Salvar esta","abrir":"Abrir","apagar":"Apagar","vazio":"Nada salvo ainda. Dê um nome e toque em Salvar esta.","baixar":"Baixar arquivo","carregar":"Abrir arquivo","fechar":"Fechar","ok":"Salva","okTxt":"Ficou na lista deste aparelho. Para levar para outro celular ou computador, use Baixar arquivo.","aberta":"Operação aberta","abertaTxt":"Todas as abas voltaram como estavam quando você salvou. Use Desfazer para voltar ao que estava antes.","conf":"Apagar a operação salva","subst":"Já existe uma salva com esse nome. Substituir?","imp":"Arquivo aberto","ruim":"Esse arquivo não é uma cópia da Nota do Trader.","arq":"nota-do-trader-salvas.json","loc":"pt-BR","aviso":"Fica guardado só neste navegador. Se limpar os dados do navegador, a lista some: baixe o arquivo para ter uma cópia.","compra":"Compra","venda":"Venda"};
 let salvas=[];
@@ -1736,7 +1777,7 @@ function salvarAtual(){
   const i=salvas.findIndex(x=>x.nome.toLowerCase()===nome.toLowerCase());
   if(i>=0&&!confirm(ST.subst))return;
   const item={nome,em:Date.now(),s:JSON.parse(JSON.stringify(S))};
-  if(i>=0)salvas.splice(i,1);
+  if(i>=0){const o=salvas[i];["res","resVal","plano"].forEach(k=>{if(o[k]!==undefined)item[k]=o[k];});salvas.splice(i,1);}
   salvas.unshift(item);gravarSalvas();renderSalvas();$("salvas-nome").value=nomePadrao();
   avisoS(ST.ok+": "+nome,ST.okTxt);
 }
@@ -1765,11 +1806,64 @@ $("salvas-arq").addEventListener("change",async e=>{
   try{const j=JSON.parse(await f.text());const lista=Array.isArray(j)?j:j&&j.salvas;
     if(!Array.isArray(lista))throw 0;
     let n=0;lista.forEach(x=>{if(!x||typeof x.nome!=="string"||!x.s||typeof x.s!=="object")return;
-      if(salvas.some(y=>y.nome===x.nome&&y.em===x.em))return;salvas.push({nome:x.nome.slice(0,80),em:+x.em||Date.now(),s:x.s});n++;});
+      if(salvas.some(y=>y.nome===x.nome&&y.em===x.em))return;salvas.push({nome:x.nome.slice(0,80),em:+x.em||Date.now(),s:x.s,res:x.res,resVal:x.resVal,plano:x.plano});n++;});
     salvas.sort((a,b)=>b.em-a.em);gravarSalvas();renderSalvas();avisoS(ST.imp,n+" operação(ões) adicionada(s) à lista.");
   }catch(_){avisoS(ST.imp,ST.ruim);}
 });
 renderSalvas();
+
+/* ---------- diário ---------- */
+function drValor(x){
+  if(!x||!x.res)return null;
+  if(x.res==="manual"){const v=num(x.resVal);return Number.isFinite(v)?v:null;}
+  try{const st={...x.s};const R=calcWith(st);return x.res==="stop"?R.liquidoStop:x.res==="alvo"?R.liquidoAlvo:null;}catch(e){return null;}
+}
+function drRisco(x){try{const R=calcWith({...x.s});return Math.abs(Math.min(R.liquidoStop,0));}catch(e){return NaN;}}
+function renderDiario(){
+  if(!$("view-diario"))return;
+  const lista=salvas.slice().sort((a,b)=>a.em-b.em);
+  const fechadas=lista.filter(x=>drValor(x)!=null);
+  const vals=fechadas.map(drValor), n=vals.length, ganhos=vals.filter(v=>v>0), total=vals.reduce((a,b)=>a+b,0);
+  const Rs=fechadas.map(x=>{const r=drRisco(x),v=drValor(x);return r>0?v/r:NaN;}).filter(Number.isFinite);
+  let seq=0,maxSeq=0;vals.forEach(v=>{if(v<0){seq++;maxSeq=Math.max(maxSeq,seq);}else seq=0;});
+  const marcPlano=lista.filter(x=>x.plano===true||x.plano===false), noPlano=marcPlano.filter(x=>x.plano===true).length;
+  const k=(t,val,d,cls)=>'<div class="kpi"><div class="k">'+t+'</div><div class="v '+(cls||"")+'">'+val+'</div>'+(d?'<div class="d">'+d+'</div>':"")+'</div>';
+  let h="";
+  h+=k("Treino",noPlano+" de 20","operações seguindo o plano · "+lista.length+" salvas");
+  h+=k("Taxa de acerto",n?nf(ganhos.length/n*100,0)+"%":"–",n?ganhos.length+" de "+n+" fechadas no lucro":"marque o resultado das operações");
+  h+=k("Resultado somado",n?brl(total):"–",n?"média de "+brl(total/n)+" por operação":"",n?(total>=0?"gain":"loss"):"");
+  h+=k("R médio",Rs.length?(Rs.reduce((a,b)=>a+b,0)/Rs.length>=0?"+":"")+nf(Rs.reduce((a,b)=>a+b,0)/Rs.length,2)+" R":"–","1 R = a perda planejada no stop");
+  h+=k("Pior sequência",n?maxSeq+" perda"+(maxSeq===1?"":"s"):"–","perdas seguidas");
+  h+=k("Seguiu o plano",marcPlano.length?nf(noPlano/marcPlano.length*100,0)+"%":"–",marcPlano.length?noPlano+" de "+marcPlano.length+" marcadas":"marque em cada operação",marcPlano.length&&noPlano<marcPlano.length?"loss":"");
+  $("dr-kpis").innerHTML=h;
+  const A=[], al=(c,t,s)=>A.push('<div class="mz-al '+c+'">'+t+(s?"<small>"+s+"</small>":"")+"</div>");
+  if(!lista.length)al("info","Nenhuma operação salva ainda. Monte a operação na aba Operação e toque em Salvar.","");
+  else if(n<lista.length)al("info",(lista.length-n)+" operaç"+(lista.length-n===1?"ão está":"ões estão")+" sem resultado marcado.","Marque stop, alvo ou saída manual em cada uma para as contas ficarem completas.");
+  const fora=marcPlano.filter(x=>x.plano===false);
+  if(fora.length)al("medio",fora.length+" operaç"+(fora.length===1?"ão":"ões")+" fora do plano: "+fora.slice(-3).map(x=>escS(x.nome)).join("; ")+".","No treino, o que conta é seguir a regra. Resultado bom fora do plano não entra na conta das 20.");
+  if(n>=10&&total<0)al("medio","Com "+n+" operações, o resultado somado está negativo.","Antes de mudar de estratégia, confira se as perdas vieram de operações dentro do plano ou fora dele.");
+  if(noPlano>=20)al("ok","Meta de treino cumprida: 20 operações seguindo o plano.","");
+  $("dr-alerts").innerHTML=A.join("");
+  const nomeAt=s=>{try{return s.inst==="FX"?(s.par||"Forex"):s.inst==="CFD"?((typeof CFD_AT!=="undefined"&&CFD_AT[s.cfd]||{}).tk||"CFD"):INFO[s.inst].nome;}catch(e){return s.inst;}};
+  $("dr-lista").innerHTML=lista.length?lista.slice().reverse().map(x=>{
+    const i=salvas.indexOf(x), v=drValor(x), d=new Date(x.em);
+    return '<div class="dr-it" data-dr="'+i+'"><div class="t"><b>'+escS(x.nome)+'</b><span>'+d.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit",year:"2-digit"})+" · "+escS(nomeAt(x.s))+" · "+(x.s.lado==="V"?"venda":"compra")+'</span></div>'+
+      '<div class="c"><select data-f="res" aria-label="Como terminou"><option value="">ainda aberta</option><option value="stop"'+(x.res==="stop"?" selected":"")+'>bateu o stop</option><option value="alvo"'+(x.res==="alvo"?" selected":"")+'>bateu o alvo</option><option value="manual"'+(x.res==="manual"?" selected":"")+'>saída manual</option></select>'+
+      (x.res==="manual"?'<input type="text" inputmode="decimal" data-f="resVal" placeholder="resultado em R$" value="'+escS(x.resVal||"")+'" aria-label="Resultado em reais">':"")+
+      '<label><input type="checkbox" data-f="plano"'+(x.plano===true?" checked":"")+'> segui o plano</label>'+
+      '<span class="dr-v '+(v==null?"":v>=0?"gain":"loss")+'">'+(v==null?"":brl(v))+'</span></div></div>';
+  }).join(""):"";
+}
+if($("view-diario")){
+  const L=$("dr-lista");
+  const ed=e=>{const el=e.target, box=el.closest&&el.closest("[data-dr]");if(!box||!el.dataset.f)return;const x=salvas[+box.dataset.dr];if(!x)return;
+    if(el.dataset.f==="plano")x.plano=el.checked;else x[el.dataset.f]=el.value;
+    gravarSalvas();if(e.type==="change")renderDiario();};
+  L.addEventListener("change",ed);L.addEventListener("input",e=>{if(e.target.dataset.f==="resVal"){ed(e);}});
+  L.addEventListener("focusout",e=>{if(e.target.dataset.f==="resVal")renderDiario();});
+  const rsBase=renderSalvas;renderSalvas=function(){rsBase.apply(this,arguments);try{renderDiario();}catch(e){}};
+  renderDiario();
+}
 
 })();
 </script>

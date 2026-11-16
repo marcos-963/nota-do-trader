@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Testes das contas</title>
+<style>
+:root{--bg:#fff;--ink:#1b1f24;--ok:#137A3F;--erro:#B4322B;--line:#d9dee4}
+@media (prefers-color-scheme:dark){:root{--bg:#15191e;--ink:#e8ecf1;--ok:#4CC983;--erro:#F07A70;--line:#2c3540}}
+body{background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,sans-serif;margin:0;padding:16px;max-width:900px}
+table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+.ok{color:var(--ok);font-weight:700}.erro{color:var(--erro);font-weight:700}
+iframe{width:1px;height:1px;border:0;position:absolute;left:-9999px}
+</style>
+</head>
+<body>
+<h1>Testes das contas da Nota do Trader</h1>
+<p>Abre a calculadora escondida e confere as contas principais com valores feitos à mão. Não muda as operações salvas.</p>
+<p id="resumo">Rodando…</p>
+<table><thead><tr><th>Caso</th><th>Esperado</th><th>Calculado</th><th></th></tr></thead><tbody id="tb"></tbody></table>
+<iframe id="f" src="../index.html?teste=1" title="calculadora"></iframe>
+<script>
+const casos=[
+  // [nome, ativo, mudanças, campo, esperado]
+  ["WIN: 200 pts contra, 1 contrato (R$ 0,20/pt)","WIN",{entrada:"120000",stop:"119800",alvo:"120400",qtd:"1"},"brutoStop",-40],
+  ["WIN: 400 pts a favor","WIN",{entrada:"120000",stop:"119800",alvo:"120400",qtd:"1"},"brutoAlvo",80],
+  ["WDO: 10 pts contra, 1 contrato (R$ 10/pt)","WDO",{entrada:"5500",stop:"5490",alvo:"5520",qtd:"1"},"brutoStop",-100],
+  ["EURUSD: 20 pips, 0,01 lote, dólar 5,50","FX",{entrada:"1.0850",stop:"1.0830",alvo:"1.0890",qtd:"0,01",cotUSD:"1",par:"EURUSD"},"brutoStop",-11],
+  ["AUDNZD: 15 pips, NZD = US$ 0,5532","FX",{entrada:"1.22659",stop:"1.22509",alvo:"1.22959",qtd:"0,01",cotUSD:"0,5532",par:"AUDNZD"},"brutoStop",-4.5639],
+  ["AUDNZD com campo vazio usa a cotação do Pre-market","FX",{entrada:"1.22659",stop:"1.22509",alvo:"1.22959",qtd:"0,01",cotUSD:"",par:"AUDNZD",pre:{par:"AUDNZD",parCot:0.5532}},"brutoStop",-4.5639],
+  ["Ouro: US$ 10 contra, 0,01 lote (100 oz)","XAU",{entrada:"4000",stop:"3990",alvo:"4020",qtd:"0,01"},"brutoStop",-55],
+  ["US100: 50 pts, 0,01 lote (US$ 20/pt)","CFD",{entrada:"25000",stop:"24950",alvo:"25100",qtd:"0,01",contrato:"20",cfd:"US100"},"brutoStop",-55],
+  ["US500: 10 pts, 0,01 lote (US$ 50/pt)","CFD",{entrada:"6800",stop:"6790",alvo:"6820",qtd:"0,01",contrato:"50",cfd:"US500"},"brutoStop",-27.5],
+  ["Spread WIN: 5 pts, 1 contrato","WIN",{entrada:"120000",stop:"119800",alvo:"120400",qtd:"1",spread:"5"},"custoSpread",1],
+  ["IR day trade B3: 20% do lucro líquido","WIN",{entrada:"120000",stop:"119800",alvo:"120400",qtd:"1"},"irNoAlvo",16],
+  ["R:R sem custos: 1 : 2","WIN",{entrada:"120000",stop:"119800",alvo:"120400",qtd:"1"},"riscoRetorno",2],
+  ["Venda: stop acima perde","FX",{lado:"V",entrada:"1.0850",stop:"1.0870",alvo:"1.0810",qtd:"0,01",cotUSD:"1"},"brutoStop",-11],
+];
+const zero={spread:"0",slip:"0",corret:"0",emol:"0",comissao:"0",swap:"0",noites:"0"};
+const tb=document.getElementById("tb");
+document.getElementById("f").addEventListener("load",()=>{
+  const T=document.getElementById("f").contentWindow.__notaTeste;
+  if(!T){document.getElementById("resumo").innerHTML='<span class="erro">A calculadora não expôs o gancho de teste (__notaTeste).</span>';return;}
+  let ok=0;
+  casos.forEach(([nome,inst,mud,campo,esp])=>{
+    const s={...T.PRESETS[inst],inst,lado:"C",modo:"day",capital:"10000",riscoPct:"1",usdbrl:"5,5",...zero,...mud};
+    let v;try{v=T.calcWith(s)[campo];}catch(e){v="erro: "+e.message;}
+    const passou=typeof v==="number"&&Math.abs(v-esp)<1e-6+Math.abs(esp)*1e-9;
+    if(passou)ok++;
+    tb.insertAdjacentHTML("beforeend","<tr><td>"+nome+"</td><td>"+esp+"</td><td>"+(typeof v==="number"?Math.round(v*1e6)/1e6:v)+"</td><td class='"+(passou?"ok'>ok":"erro'>falhou")+"</td></tr>");
+  });
+  document.getElementById("resumo").innerHTML='<span class="'+(ok===casos.length?"ok":"erro")+'">'+ok+" de "+casos.length+" casos certos</span>";
+  document.title=(ok===casos.length?"OK ":"FALHOU ")+ok+"/"+casos.length;
+});
+</script>
+</body>
+</html>
